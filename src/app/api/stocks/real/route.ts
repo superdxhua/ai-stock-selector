@@ -1,11 +1,13 @@
 /**
  * 东方财富数据源API
- * 
+ *
  * 数据来源：东方财富 (https://www.eastmoney.com)
  * 默认接入：实时股票行情数据
- * 策略支持：全部股票、5日趋势核心、5日容量核心、龙头精选
- * 
- * 注意：此API仅获取和分析前30只股票数据，避免API限流
+ * 策略支持：5日趋势核心、5日容量核心、龙头精选
+ *
+ * 注意：
+ * - 此API仅获取和分析前30只股票数据，避免API限流
+ * - 自动过滤：科创板（688开头）、ST股票
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -36,6 +38,30 @@ interface StockWithScore {
 }
 
 /**
+ * 过滤不适合投资的股票
+ * @param stocks 股票列表
+ * @returns 过滤后的股票列表
+ */
+function filterStocks(stocks: any[]): any[] {
+  return stocks.filter(stock => {
+    const code = stock.f12 || stock.code;
+    const name = stock.f14 || stock.name;
+
+    // 排除科创板（688开头）
+    if (code.startsWith('688')) {
+      return false;
+    }
+
+    // 排除ST股票（名称包含"ST"或"*ST"）
+    if (name.includes('ST') || name.includes('*ST')) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+/**
  * GET /api/stocks/real - 获取真实股票数据
  * 支持策略筛选参数: strategy=5day-trend|5day-volume|leader
  * 默认策略: 5day-trend
@@ -59,7 +85,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`获取到 ${stockList.length} 只股票`);
+    console.log(`获取到 ${stockList.length} 只股票（含科创板和ST）`);
+
+    // 过滤科创板和ST股票
+    stockList = filterStocks(stockList);
+    console.log(`过滤后剩余 ${stockList.length} 只股票（已排除科创板和ST）`);
 
     // 策略筛选，分析前30只股票
     let targetStocks = stockList.slice(0, 30);

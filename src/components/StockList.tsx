@@ -323,6 +323,11 @@ export default function StockList() {
                     </span>
                   </Badge>
                 )}
+                <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-md">
+                  <span className="flex items-center gap-1">
+                    ⚠️ 已排除科创板和ST股票
+                  </span>
+                </Badge>
                 <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-md">
                   <span className="flex items-center gap-1">
                     📡 东方财富实时数据
