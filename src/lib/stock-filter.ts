@@ -50,25 +50,24 @@ export function filterStocks(stocks: any[]): any[] {
       return false;
     }
 
-    // 排除市值700亿元以上的股票
-    // f20字段是总市值，单位：元
-    const marketCap = Number(stock.f20) || 0;
+    // 排除流通市值700亿元以上的股票
+    // f21字段是流通市值，单位：元
+    const marketCap = Number(stock.f21 || stock.f20) || 0;
     if (marketCap > 70000000000) {
-      console.log(`  排除 ${code} ${name}: 市值=${(marketCap / 100000000).toFixed(2)}亿元 > 700亿元`);
+      console.log(`  排除 ${code} ${name}: 流通值=${(marketCap / 100000000).toFixed(2)}亿元 > 700亿元`);
       return false;
     }
 
-    // 排除市值40亿元以下的股票
+    // 排除流通市值40亿元以下的股票
     if (marketCap < 4000000000) {
-      console.log(`  排除 ${code} ${name}: 市值=${(marketCap / 100000000).toFixed(2)}亿元 < 40亿元`);
+      console.log(`  排除 ${code} ${name}: 流通值=${(marketCap / 100000000).toFixed(2)}亿元 < 40亿元`);
       return false;
     }
 
-    // 排除成交额过低的股票
-    // 注意：amount字段是基于f38（成交量手数）和价格计算得出的成交额（万元）
+    // 排除成交额过低的股票（5亿元以下）
     const amount = stock.amount;
-    if (amount && amount < 30) {  // 30万元
-      console.log(`  排除 ${code} ${name}: 成交额=${amount.toFixed(2)}万元 < 30万元`);
+    if (amount && amount < 50000) {  // 5亿元 = 50000万元
+      console.log(`  排除 ${code} ${name}: 成交额=${(amount / 10000).toFixed(2)}亿元 < 5亿元`);
       return false;
     }
 

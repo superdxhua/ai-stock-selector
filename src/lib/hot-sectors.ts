@@ -119,7 +119,7 @@ export async function getSectorStocks(sectorCode: string): Promise<any[]> {
       invt: "2",
       fid: "f3",
       fs: `b:${sectorCode}+f:!50`, // 从指定板块获取股票，排除50和60开头的
-      fields: "f12,f14,f2,f3,f4,f20,f17,f21,f40", // 包含代码、名称、最新价、涨跌幅、昨收、市值、换手率、成交额
+      fields: "f12,f14,f2,f3,f4,f20,f21,f17,f40", // 包含代码、名称、最新价、涨跌幅、昨收、总市值、流通市值、换手率、成交额
     });
 
     const response = await fetch(`${SECTOR_API.sectorList}?${params}`, {
@@ -198,18 +198,19 @@ export async function filterHotSectorStocks(
           ...stock,
           f2: hotSectorStock.f2 || stock.f2,
           f20: hotSectorStock.f20 || stock.f20,
+          f21: hotSectorStock.f21 || stock.f21,
           f17: hotSectorStock.f17 || stock.f17,
           f40: hotSectorStock.f40 || stock.f40,
         };
 
-        // 检查市值过滤：40亿-700亿元
-        const marketCap = Number(mergedStock.f20) || 0;
+        // 检查流通市值过滤：40亿-700亿元
+        const marketCap = Number(mergedStock.f21 || mergedStock.f20) || 0;
         if (marketCap > 70000000000) {
-          console.log(`  排除 ${stock.f12} ${stock.f14}: 市值=${(marketCap / 100000000).toFixed(2)}亿元 > 700亿元（热点板块）`);
+          console.log(`  排除 ${stock.f12} ${stock.f14}: 流通值=${(marketCap / 100000000).toFixed(2)}亿元 > 700亿元（热点板块）`);
           continue;
         }
         if (marketCap < 4000000000) {
-          console.log(`  排除 ${stock.f12} ${stock.f14}: 市值=${(marketCap / 100000000).toFixed(2)}亿元 < 40亿元（热点板块）`);
+          console.log(`  排除 ${stock.f12} ${stock.f14}: 流通值=${(marketCap / 100000000).toFixed(2)}亿元 < 40亿元（热点板块）`);
           continue;
         }
 
