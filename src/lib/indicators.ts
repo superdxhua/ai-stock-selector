@@ -332,6 +332,11 @@ export interface TechnicalAnalysis {
   trendScore: number;
   volumeScore: number;
   leaderScore: number;
+
+  // 大牛股特征
+  bullScore?: number;
+  bullPotential?: 'high' | 'medium' | 'low' | 'none';
+  bullFeatures?: string[];
 }
 
 /**
