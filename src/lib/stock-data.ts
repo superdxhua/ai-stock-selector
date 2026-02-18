@@ -11,7 +11,6 @@ export interface Stock {
   // 新增：策略评分
   trendScore?: number;
   volumeScore?: number;
-  cycScore?: number;
 }
 
 export interface KLineData {
@@ -413,72 +412,6 @@ export function calculate5DayVolumeScore(kline: KLineData[], stockPrice: number)
   return Math.min(100, score);
 }
 
-// 计算CYC成本均线选股评分
-function calculateCYCScore(kline: KLineData[]): number {
-  if (kline.length < 34) return 0; // 需要至少34天数据
-
-  // 必选条件：5日内至少有一个涨停板
-  if (!hasLimitUpIn5Days(kline)) {
-    return 0;
-  }
-
-  const cyc5 = calculateCYC(kline, 5);
-  const cyc13 = calculateCYC(kline, 13);
-  const cyc34 = calculateCYC(kline, 34);
-  const closes = kline.map((d) => d.close);
-  const lastClose = closes[closes.length - 1];
-  const lastCyc5 = cyc5[cyc5.length - 1];
-  const lastCyc13 = cyc13[cyc13.length - 1];
-  const lastCyc34 = cyc34[cyc34.length - 1];
-
-  let score = 0;
-
-  // 1. 价格与CYC5的关系 (权重30)
-  if (lastClose > lastCyc5 && !isNaN(lastCyc5)) {
-    score += 30;
-  }
-
-  // 2. CYC多头排列 (权重35) - CYC5 > CYC13 > CYC34
-  if (
-    lastCyc5 > lastCyc13 &&
-    lastCyc13 > lastCyc34 &&
-    !isNaN(lastCyc5) &&
-    !isNaN(lastCyc13) &&
-    !isNaN(lastCyc34)
-  ) {
-    score += 35;
-  } else if (
-    lastCyc5 > lastCyc13 &&
-    !isNaN(lastCyc5) &&
-    !isNaN(lastCyc13)
-  ) {
-    score += 20; // 部分多头排列
-  }
-
-  // 3. CYC13支撑有效 (权重20) - 价格在CYC13上方或接近CYC13
-  const distanceToCyc13 = Math.abs((lastClose - lastCyc13) / lastCyc13);
-  if (distanceToCyc13 < 0.02 && lastClose > lastCyc13 && !isNaN(lastCyc13)) {
-    // 价格在CYC13上方2%范围内
-    score += 20;
-  } else if (lastClose > lastCyc13 && !isNaN(lastCyc13)) {
-    score += 10;
-  }
-
-  // 4. CYC趋势向上 (权重15) - 最近5日CYC5持续上升
-  const recentCyc5 = cyc5.slice(-5);
-  let cyc5RisingDays = 0;
-  for (let i = 1; i < recentCyc5.length; i++) {
-    if (recentCyc5[i] > recentCyc5[i - 1] && !isNaN(recentCyc5[i]) && !isNaN(recentCyc5[i - 1])) {
-      cyc5RisingDays++;
-    }
-  }
-  if (cyc5RisingDays >= 4) score += 15;
-  else if (cyc5RisingDays >= 3) score += 12;
-  else if (cyc5RisingDays >= 2) score += 8;
-
-  return Math.min(100, score);
-}
-
 // 获取股票详情
 export function getStockDetail(code: string): StockDetail | null {
   const stock = stockList.find((s) => s.code === code);
@@ -538,21 +471,6 @@ export function selectStocks(strategy: string): Stock[] {
         })
         .filter((s) => s.volumeScore && s.volumeScore >= 50)
         .sort((a, b) => (b.volumeScore || 0) - (a.volumeScore || 0));
-      break;
-    case "cyc":
-      // CYC成本均线策略
-      selected = stockList
-        .map((stock) => {
-          const kline = generateKLineData(
-            stock.price,
-            34,
-            stock.changePercent > 1 ? "up" : "neutral"
-          );
-          const score = calculateCYCScore(kline);
-          return { ...stock, cycScore: score };
-        })
-        .filter((s) => s.cycScore && s.cycScore >= 50)
-        .sort((a, b) => (b.cycScore || 0) - (a.cycScore || 0));
       break;
     default:
       selected = stockList;

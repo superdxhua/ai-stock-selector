@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import StrategyCalendar from "./StrategyCalendar";
 import ConsecutiveStocks from "./ConsecutiveStocks";
@@ -20,14 +20,12 @@ interface Stock {
   marketCap: number;
   trendScore?: number;
   volumeScore?: number;
-  cycScore?: number;
 }
 
 const strategies = [
   { id: "all", name: "全部股票", description: "查看所有股票" },
   { id: "5day-trend", name: "5日趋势核心", description: "短期强势上涨股（评分≥50）" },
   { id: "5day-volume", name: "5日容量核心", description: "成交量活跃股（评分≥50）" },
-  { id: "cyc", name: "CYC成本均线", description: "市场成本支撑股（评分≥50）" },
 ];
 
 export default function StockList() {
@@ -97,7 +95,7 @@ export default function StockList() {
   };
 
   const currentStrategy = strategies.find((s) => s.id === selectedStrategy);
-  const showScore = selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume" || selectedStrategy === "cyc";
+  const showScore = selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume";
 
   return (
     <div className="flex flex-col gap-4">
@@ -116,7 +114,6 @@ export default function StockList() {
             <div className="flex items-center gap-2 mb-1">
               {strategy.id === "5day-trend" && <TrendingUp className="w-4 h-4 text-blue-600" />}
               {strategy.id === "5day-volume" && <BarChart3 className="w-4 h-4 text-purple-600" />}
-              {strategy.id === "cyc" && <Activity className="w-4 h-4 text-purple-600" />}
               <h3 className="font-semibold text-sm">{strategy.name}</h3>
             </div>
             <p className="text-xs text-muted-foreground">{strategy.description}</p>
@@ -209,17 +206,13 @@ export default function StockList() {
                     {showScore && (
                       <TableCell className="text-right">
                         <Badge className={getScoreColor(
-                          selectedStrategy === "5day-trend" ? stock.trendScore :
-                          selectedStrategy === "5day-volume" ? stock.volumeScore :
-                          stock.cycScore
+                          selectedStrategy === "5day-trend" ? stock.trendScore : stock.volumeScore
                         )}>
                           <span className="flex items-center gap-1">
                             <Flame className="w-3 h-3" />
                             {selectedStrategy === "5day-trend"
                               ? (stock.trendScore || 0)
-                              : selectedStrategy === "5day-volume"
-                              ? (stock.volumeScore || 0)
-                              : (stock.cycScore || 0)}
+                              : (stock.volumeScore || 0)}
                           </span>
                         </Badge>
                       </TableCell>
@@ -264,19 +257,7 @@ export default function StockList() {
             <p><strong>评分规则：</strong>均量倍数(35分) + 换手率(25分) + 成交量递增(20分) + 量价配合(20分)</p>
           </div>
         )}
-        {selectedStrategy === "cyc" && (
-          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <p><strong>筛选条件：</strong></p>
-            <p>• <strong>5日内至少有一个涨停板（必选）</strong></p>
-            <p>• 价格在CYC5上方</p>
-            <p>• CYC多头排列（CYC5 &gt; CYC13 &gt; CYC34）</p>
-            <p>• 价格在CYC13上方或接近</p>
-            <p>• CYC5趋势向上</p>
-            <p><strong>评分规则：</strong>价格位置(30分) + 多头排列(35分) + 支撑有效(20分) + 趋势向上(15分)</p>
-            <p className="text-xs text-purple-700 dark:text-purple-300">💡 CYC反映市场平均成本，价格在成本上方表示多数投资者盈利</p>
-          </div>
-        )}
-        {selectedStrategy !== "5day-trend" && selectedStrategy !== "5day-volume" && selectedStrategy !== "cyc" && (
+        {selectedStrategy !== "5day-trend" && selectedStrategy !== "5day-volume" && (
           <p className="text-sm text-blue-800 dark:text-blue-200">
             {currentStrategy?.description}
           </p>
@@ -284,7 +265,7 @@ export default function StockList() {
       </Card>
 
       {/* 日历和连续上榜（仅策略模式下显示） */}
-      {(selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume" || selectedStrategy === "cyc") && (
+      {(selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume") && (
         <>
           <StrategyCalendar strategy={selectedStrategy} />
           <ConsecutiveStocks strategy={selectedStrategy} />
