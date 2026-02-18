@@ -452,11 +452,10 @@ export function performTechnicalAnalysis(klines: KLineData[], stockCode?: string
   if (macdGoldenCross) trendScore += 20; // MACD金叉
 
   // 成交量评分（5日趋势核心策略也要求成交量活跃）
-  // 使用5日/20日均量比，更能体现长期的成交量堆积特征
-  if (volumeRatio >= 1.3) trendScore += 20; // 5日/20日均量比≥1.3倍，明显的成交量堆积
-  else if (volumeRatio >= 1.15) trendScore += 15; // 5日/20日均量比≥1.15倍，成交量较好
-  else if (volumeRatio >= 1.05) trendScore += 10; // 5日/20日均量比≥1.05倍，成交量正常
-  else if (volumeRatio < 0.95) trendScore -= 15; // 5日/20日均量比<0.95倍，成交量低迷，惩罚15分
+  // 使用5日/20日均量比，严格的成交量筛选标准
+  if (volumeRatio >= 5.0) trendScore += 20; // 5日/20日均量比≥5倍，成交量暴增
+  else if (volumeRatio >= 3.0) trendScore += 15; // 5日/20日均量比≥3倍，成交量显著放大
+  else if (volumeRatio < 2.0) trendScore -= 15; // 5日/20日均量比<2倍，成交量不足，惩罚15分
 
   trendScore = Math.min(Math.round(trendScore * oneSidedPenalty), 100);
 
