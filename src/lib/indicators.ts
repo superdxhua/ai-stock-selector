@@ -43,7 +43,7 @@ export function calculateEMA(data: number[], period: number): number[] {
 
 /**
  * 计算CYC成本均线（Cost Average Line）
- * CYC指标表示市场平均持仓成本，使用加权移动平均计算
+ * 通达信算法：CYC = EMA(成交额, 5) / EMA(成交量, 5)
  * @param klines K线数据
  * @param period 周期，默认5日
  */
@@ -52,29 +52,20 @@ export function calculateCYC(klines: KLineData[], period: number = 5): number[] 
     return new Array(klines.length).fill(0);
   }
 
-  const result: number[] = [];
+  // 计算每根K线的成交额
+  const amounts = klines.map(k => k.close * k.volume);
+  const volumes = klines.map(k => k.volume);
 
-  for (let i = 0; i < klines.length; i++) {
-    if (i < period - 1) {
-      result.push(0);
-    } else {
-      // 使用成交额加权平均计算成本
-      let totalAmount = 0;
-      let totalVolume = 0;
+  // 对成交额和成交量分别进行EMA平滑
+  const emaAmounts = calculateEMA(amounts, period);
+  const emaVolumes = calculateEMA(volumes, period);
 
-      for (let j = 0; j < period; j++) {
-        const idx = i - j;
-        // 成交额 = 成交量 × 收盘价
-        const amount = klines[idx].volume * klines[idx].close;
-        totalAmount += amount;
-        totalVolume += klines[idx].volume;
-      }
+  // CYC = EMA(成交额, period) / EMA(成交量, period)
+  const result = emaAmounts.map((amount, idx) => {
+    const volume = emaVolumes[idx];
+    return volume > 0 ? amount / volume : 0;
+  });
 
-      // 成本 = 总成交额 / 总成交量
-      const cyc = totalVolume > 0 ? totalAmount / totalVolume : 0;
-      result.push(cyc);
-    }
-  }
   return result;
 }
 
