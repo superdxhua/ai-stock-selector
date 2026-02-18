@@ -53,8 +53,8 @@ export interface StockBasicInfo {
   f2: number; // 最新价
   f3: number; // 涨跌幅
   f4: number; // 昨收盘价
-  f5: number; // 量比
-  f6: number; // 涨跌额
+  f5: number; // 成交量（手）
+  f6: number; // 成交额（元）
   f7: number; // 成交量（旧字段，可能不准确）
   f8: number; // 振幅
   f9: number; // 最高
@@ -68,7 +68,8 @@ export interface StockBasicInfo {
   f21: number; // 流通市值
   f22: number; // 市盈率
   f23: number; // 市净率
-  f38: number; // 成交量（手，准确）
+  f38: number; // 成交量（手，备用）
+  f40: number; // 成交额（元，备用）
 }
 
 export interface KLineData {
@@ -152,40 +153,54 @@ export async function getStockDetail(codes: string[]): Promise<StockBasicInfo[]>
 }
 
 /**
- * 获取K线数据（目前使用模拟数据）
+ * 获取K线数据
+ * 使用新浪财经K线API获取真实数据
  */
 export async function getKLineData(
   code: string,
   period: "101" | "102" | "103" = "101"
 ): Promise<KLineData[]> {
-  // TODO: 替换为真实的K线数据API
-  // 由于东方财富K线API路径可能需要调整，暂时使用模拟数据
-  console.warn(`股票 ${code} 使用模拟K线数据`);
-  
-  const days = 60;
-  const klines: KLineData[] = [];
-  const now = new Date();
-  
-  // 生成模拟K线数据
-  for (let i = days; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
+  try {
+    // 构建新浪K线API URL
+    // 101: 日K线, 102: 周K线, 103: 月K线
+    // 根据股票代码构建symbol: sh开头为沪市, sz开头为深市
+    const market = code.startsWith('6') ? 'sh' : 'sz';
+    const symbol = `${market}${code}`;
     
-    const basePrice = 10 + Math.random() * 20;
-    const volatility = basePrice * 0.05;
+    // 请求120天数据，确保有足够的数据进行技术分析
+    const url = `https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${symbol}&scale=240&ma=no&datalen=120`;
     
-    klines.push({
-      date: date.toISOString().split('T')[0],
-      open: basePrice + (Math.random() - 0.5) * volatility,
-      close: basePrice + (Math.random() - 0.5) * volatility,
-      high: basePrice + volatility * 0.8,
-      low: basePrice - volatility * 0.8,
-      volume: Math.floor(Math.random() * 100000000) + 10000000,
-      amount: Math.floor(Math.random() * 1000000000) + 100000000,
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
     });
+
+    const data = await response.json();
+    
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn(`股票 ${code} 未获取到K线数据`);
+      return [];
+    }
+
+    // 转换数据格式
+    const klines: KLineData[] = data.map((item: any) => ({
+      date: item.day,
+      open: parseFloat(item.open),
+      close: parseFloat(item.close),
+      high: parseFloat(item.high),
+      low: parseFloat(item.low),
+      volume: parseInt(item.volume), // 成交量（股）
+      amount: 0, // 新浪API不返回成交额，可以后续根据成交量*价格计算
+    }));
+
+    console.log(`股票 ${code} 获取到 ${klines.length} 条K线数据`);
+    
+    return klines;
+  } catch (error) {
+    console.error(`获取股票 ${code} K线数据失败:`, error);
+    return [];
   }
-  
-  return klines;
 }
 
 /**
@@ -204,15 +219,14 @@ export function formatStockData(stock: StockBasicInfo) {
     price: price,
     change: change,
     changePercent: changePercent,
-    volume: Math.round((stock.f40 || 0) / price), // 成交量（股）= 成交额（元）/ 价格
+    volume: Math.round((stock.f5 || 0) * 100), // 成交量（股）= 成交量（手）* 100
     marketCap: stock.f21 || stock.f20, // f21流通市值（元），如果没有则使用f20总市值
-    amount: (stock.f40 || 0) / 10000, // 成交额（万元）
+    amount: (stock.f6 || 0) / 10000, // 成交额（万元）
     turnoverRate: stock.f18, // 换手率
     high: stock.f9,
     low: stock.f10,
     open: stock.f11,
-    turnoverRate: stock.f18,
-    volumeRatio: stock.f5,
+    volumeRatio: stock.f7 || 0, // 量比（使用f7字段）
     pe: stock.f22,
     pb: stock.f23,
     amplitude: stock.f8,
