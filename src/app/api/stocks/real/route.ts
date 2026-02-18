@@ -1,3 +1,13 @@
+/**
+ * 东方财富数据源API
+ * 
+ * 数据来源：东方财富 (https://www.eastmoney.com)
+ * 默认接入：实时股票行情数据
+ * 策略支持：全部股票、5日趋势核心、5日容量核心、龙头精选
+ * 
+ * 注意：此API仅获取和分析前30只股票数据，避免API限流
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getStockList, getKLineData, COMMON_STOCKS, formatStockData } from '@/lib/stock-data';
 import { performTechnicalAnalysis } from '@/lib/indicators';

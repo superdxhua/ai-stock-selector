@@ -37,6 +37,9 @@ export default function StockList() {
   const [isLoading, setIsLoading] = useState(false);
 
   // 生成模拟股票数据
+  // ====== 模拟数据生成函数 ======
+  // 注意：此函数仅用于离线测试或开发调试
+  // 生产环境默认使用东方财富真实数据源
   const generateMockStocks = (strategy: string): Stock[] => {
     const stockNames = [
       { code: "600519", name: "贵州茅台", sector: "白酒" },
@@ -100,7 +103,7 @@ export default function StockList() {
   const fetchStocks = async (strategy: string) => {
     setIsLoading(true);
     try {
-      // 使用真实数据API
+      // 使用东方财富真实数据API
       const url = strategy === "all"
         ? "/api/stocks/real"
         : `/api/stocks/real?strategy=${strategy}`;
@@ -110,7 +113,7 @@ export default function StockList() {
 
       if (result.success) {
         setStocks(result.data);
-        console.log(`获取到 ${result.data?.length || 0} 只股票数据`);
+        console.log(`获取到 ${result.data?.length || 0} 只股票数据（来自东方财富）`);
 
         // 如果是策略筛选，自动保存历史记录
         if (strategy !== "all" && result.data && result.data.length > 0) {
@@ -118,37 +121,13 @@ export default function StockList() {
         }
       } else {
         console.error("获取股票数据失败:", result.error);
-        // 如果真实数据获取失败，使用模拟数据
-        console.log("使用模拟数据");
-        let mockStocks = generateMockStocks(strategy);
-
-        if (strategy === "5day-trend") {
-          mockStocks.sort((a, b) => (b.trendScore || 0) - (a.trendScore || 0));
-        } else if (strategy === "5day-volume") {
-          mockStocks.sort((a, b) => (b.volumeScore || 0) - (a.volumeScore || 0));
-        } else if (strategy === "leader") {
-          mockStocks.sort((a, b) => (b.leaderScore || 0) - (a.leaderScore || 0));
-          mockStocks = mockStocks.slice(0, 3);
-        }
-
-        setStocks(mockStocks);
+        alert(`获取股票数据失败: ${result.error || "未知错误"}`);
+        setStocks([]);
       }
     } catch (error) {
       console.error("Error fetching stocks:", error);
-      // 出错时使用模拟数据
-      console.log("出错，使用模拟数据");
-      let mockStocks = generateMockStocks(strategy);
-
-      if (strategy === "5day-trend") {
-        mockStocks.sort((a, b) => (b.trendScore || 0) - (a.trendScore || 0));
-      } else if (strategy === "5day-volume") {
-        mockStocks.sort((a, b) => (b.volumeScore || 0) - (a.volumeScore || 0));
-      } else if (strategy === "leader") {
-        mockStocks.sort((a, b) => (b.leaderScore || 0) - (a.leaderScore || 0));
-        mockStocks = mockStocks.slice(0, 3);
-      }
-
-      setStocks(mockStocks);
+      alert(`获取股票数据失败: ${error instanceof Error ? error.message : "网络错误"}`);
+      setStocks([]);
     } finally {
       setIsLoading(false);
     }
@@ -233,6 +212,11 @@ export default function StockList() {
                 按评分排序
               </Badge>
             )}
+            <Badge className="bg-green-100 text-green-700">
+              <span className="flex items-center gap-1">
+                📡 东方财富实时数据
+              </span>
+            </Badge>
           </h2>
         </div>
 

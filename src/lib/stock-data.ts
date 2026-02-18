@@ -1,6 +1,19 @@
 /**
  * 东方财富股票数据获取模块
+ * 
+ * 本应用默认使用东方财富作为数据源
+ * 提供沪深A股实时行情、技术指标分析等功能
+ * 
+ * 数据来源：东方财富 (https://www.eastmoney.com)
+ * 更新频率：实时
  */
+
+import { DEFAULT_DATA_SOURCE } from './data-source-config';
+
+// 确认使用东方财富作为默认数据源
+if (DEFAULT_DATA_SOURCE !== "eastmoney") {
+  console.warn("警告：数据源配置与实际使用不一致");
+}
 
 // 东方财富API配置
 const EASTMONEY_API = {
