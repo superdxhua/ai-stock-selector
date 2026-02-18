@@ -7,6 +7,9 @@
 import { KLineData } from './stock-data';
 import { BullStockFeatures } from './bull-stock-features';
 
+// 重新导出类型供外部使用
+export type { BullStockFeatures } from './bull-stock-features';
+
 /**
  * 从K线数据中提取大牛股特征
  */

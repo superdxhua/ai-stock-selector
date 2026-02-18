@@ -11,9 +11,15 @@ import { extractBullStockFeatures, BullStockFeatures } from './feature-extractor
 /**
  * 增强的技术分析结果，包含大牛股评分
  */
-export interface EnhancedTechnicalAnalysis extends TechnicalAnalysis {
+export interface EnhancedTechnicalAnalysis extends Omit<TechnicalAnalysis, 'bullScore' | 'bullPotential' | 'bullFeatures'> {
   // 大牛股特征
   bullFeatures: BullStockFeatures;
+  // 大牛股评分
+  bullScore: number;
+  // 大牛股潜力等级
+  bullPotential: 'high' | 'medium' | 'low';
+  // 命中的特征列表
+  bullFeaturesList: string[];
   // 是否符合大牛股潜力
   isBullPotential: boolean;
   // 建议纳入的策略

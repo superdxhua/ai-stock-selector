@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     const targetStocks = stockList.slice(0, 100);
     console.log(`分析 ${targetStocks.length} 只股票的大牛股特征`);
 
-    const analyzedStocks = [];
+    const analyzedStocks: any[] = [];
 
     // 限制并发请求数量
     const batchSize = 5;
