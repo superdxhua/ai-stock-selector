@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3 } from "lucide-react";
 import Link from "next/link";
 
 interface Stock {
@@ -16,6 +16,8 @@ interface Stock {
   changePercent: number;
   volume: number;
   marketCap: number;
+  trendScore?: number;
+  volumeScore?: number;
 }
 
 const strategies = [
@@ -24,6 +26,8 @@ const strategies = [
   { id: "value", name: "价值投资", description: "价格 < 50 且市值 > 1000亿" },
   { id: "growth", name: "成长策略", description: "涨幅 > 0 且成交量 > 5000万" },
   { id: "large-cap", name: "大盘蓝筹", description: "市值 > 5000亿" },
+  { id: "5day-trend", name: "5日趋势核心", description: "短期强势上涨股（评分≥50）" },
+  { id: "5day-volume", name: "5日容量核心", description: "成交量活跃股（评分≥50）" },
 ];
 
 export default function StockList() {
@@ -66,10 +70,21 @@ export default function StockList() {
     return num.toLocaleString();
   };
 
+  const getScoreColor = (score: number | undefined): string => {
+    if (!score) return "bg-gray-100 text-gray-700";
+    if (score >= 85) return "bg-red-100 text-red-700";
+    if (score >= 70) return "bg-orange-100 text-orange-700";
+    if (score >= 60) return "bg-yellow-100 text-yellow-700";
+    return "bg-green-100 text-green-700";
+  };
+
+  const currentStrategy = strategies.find((s) => s.id === selectedStrategy);
+  const showScore = selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume";
+
   return (
     <div className="flex flex-col gap-4">
       {/* 策略选择 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {strategies.map((strategy) => (
           <Card
             key={strategy.id}
@@ -80,10 +95,12 @@ export default function StockList() {
             }`}
             onClick={() => setSelectedStrategy(strategy.id)}
           >
-            <h3 className="font-semibold text-sm mb-1">{strategy.name}</h3>
-            <p className="text-xs text-muted-foreground">
-              {strategy.description}
-            </p>
+            <div className="flex items-center gap-2 mb-1">
+              {strategy.id === "5day-trend" && <TrendingUp className="w-4 h-4 text-blue-600" />}
+              {strategy.id === "5day-volume" && <BarChart3 className="w-4 h-4 text-purple-600" />}
+              <h3 className="font-semibold text-sm">{strategy.name}</h3>
+            </div>
+            <p className="text-xs text-muted-foreground">{strategy.description}</p>
           </Card>
         ))}
       </div>
@@ -92,10 +109,15 @@ export default function StockList() {
       <Card className="overflow-hidden">
         <div className="p-4 border-b bg-slate-50 dark:bg-slate-900/50">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            {strategies.find((s) => s.id === selectedStrategy)?.name}
+            {currentStrategy?.name}
             <span className="text-sm font-normal text-muted-foreground">
               ({stocks.length} 只)
             </span>
+            {showScore && (
+              <Badge className="bg-blue-100 text-blue-700">
+                按评分排序
+              </Badge>
+            )}
           </h2>
         </div>
 
@@ -115,6 +137,9 @@ export default function StockList() {
                   <TableHead className="text-right">涨跌幅</TableHead>
                   <TableHead className="text-right">成交量</TableHead>
                   <TableHead className="text-right">市值</TableHead>
+                  {showScore && (
+                    <TableHead className="text-right">评分</TableHead>
+                  )}
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -162,6 +187,20 @@ export default function StockList() {
                     <TableCell className="text-right font-mono text-sm">
                       {formatNumber(stock.marketCap)}
                     </TableCell>
+                    {showScore && (
+                      <TableCell className="text-right">
+                        <Badge className={getScoreColor(
+                          selectedStrategy === "5day-trend" ? stock.trendScore : stock.volumeScore
+                        )}>
+                          <span className="flex items-center gap-1">
+                            <Flame className="w-3 h-3" />
+                            {selectedStrategy === "5day-trend"
+                              ? (stock.trendScore || 0)
+                              : (stock.volumeScore || 0)}
+                          </span>
+                        </Badge>
+                      </TableCell>
+                    )}
                     <TableCell className="text-right">
                       <Button variant="outline" size="sm" asChild>
                         <Link href={`/stock/${stock.code}`}>详情</Link>
@@ -175,19 +214,36 @@ export default function StockList() {
         )}
       </Card>
 
-      {/* 提示信息 */}
+      {/* 策略说明 */}
       <Card className="p-4 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
-        <p className="text-sm text-blue-800 dark:text-blue-200">
-          💡 <strong>选股策略说明：</strong>
-          <br />
-          • 看涨策略：筛选当日涨幅超过 2% 的强势股票
-          <br />
-          • 价值投资：寻找价格合理、市值较大的优质股票
-          <br />
-          • 成长策略：关注成交活跃且走势向好的成长股
-          <br />
-          • 大盘蓝筹：聚焦市值超 5000 亿的权重股
-        </p>
+        <h3 className="font-semibold mb-2 text-blue-800 dark:text-blue-200">
+          📊 {currentStrategy?.name} - 策略说明
+        </h3>
+        {selectedStrategy === "5day-trend" && (
+          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+            <p><strong>筛选条件：</strong></p>
+            <p>• 连续3天以上上涨</p>
+            <p>• 5日涨幅 > 3%</p>
+            <p>• 价格在MA5上方</p>
+            <p>• MACD金叉（DIF > DEA）</p>
+            <p><strong>评分规则：</strong>连阳天数(30分) + 5日涨幅(25分) + 技术形态(25分) + MACD金叉(20分)</p>
+          </div>
+        )}
+        {selectedStrategy === "5day-volume" && (
+          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+            <p><strong>筛选条件：</strong></p>
+            <p>• 5日均量 > 10日均量的1.2倍</p>
+            <p>• 换手率 > 3%</p>
+            <p>• 成交量递增趋势</p>
+            <p>• 量价配合良好</p>
+            <p><strong>评分规则：</strong>均量倍数(35分) + 换手率(25分) + 成交量递增(20分) + 量价配合(20分)</p>
+          </div>
+        )}
+        {selectedStrategy !== "5day-trend" && selectedStrategy !== "5day-volume" && (
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            {currentStrategy?.description}
+          </p>
+        )}
       </Card>
     </div>
   );
