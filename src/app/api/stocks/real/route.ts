@@ -57,6 +57,7 @@ interface StockWithScore {
  * - 流通值700亿元以上的股票
  * - 流通值40亿元以下的股票
  * - 成交额5亿元以下的股票（f40字段，单位：元）
+ * - 5日内无涨停板的股票（所有策略强制要求）
  */
 export async function GET(request: NextRequest) {
   try {
@@ -241,6 +242,18 @@ export async function GET(request: NextRequest) {
       } else {
         stocks = sortedStocks;
       }
+
+      // 过滤5日内必须有涨停板的股票（所有策略）
+      const limitUpFilteredStocks = stocks.filter(stock => {
+        const hasLimitUp = stock.technicalAnalysis?.hasLimitUp;
+        if (!hasLimitUp) {
+          console.log(`  排除 ${stock.code} ${stock.name}: 5日内无涨停板`);
+          return false;
+        }
+        return true;
+      });
+      console.log(`过滤5日内无涨停板的股票，结果: ${limitUpFilteredStocks.length} 只`);
+      stocks = limitUpFilteredStocks;
     }
 
     console.log(`返回 ${stocks.length} 只股票数据`);
