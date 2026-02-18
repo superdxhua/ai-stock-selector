@@ -203,7 +203,7 @@ export function formatStockData(stock: StockBasicInfo) {
     change: change,
     changePercent: changePercent,
     volume: stock.f7 * 100, // 转换为股
-    marketCap: stock.f20 * 10000, // 转换为元
+    marketCap: stock.f20, // f20字段已经是元为单位
     high: stock.f9,
     low: stock.f10,
     open: stock.f11,
