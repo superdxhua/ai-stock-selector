@@ -13,7 +13,7 @@ import ConsecutiveStocks from "./ConsecutiveStocks";
 interface Stock {
   code: string;
   name: string;
-  sector: string;
+  sector?: string;
   price: number;
   change: number;
   changePercent: number;
@@ -100,36 +100,55 @@ export default function StockList() {
   const fetchStocks = async (strategy: string) => {
     setIsLoading(true);
     try {
-      // 使用模拟数据
+      // 使用真实数据API
+      const url = strategy === "all"
+        ? "/api/stocks/real"
+        : `/api/stocks/real?strategy=${strategy}`;
+
+      const response = await fetch(url);
+      const result = await response.json();
+
+      if (result.success) {
+        setStocks(result.data);
+        console.log(`获取到 ${result.data?.length || 0} 只股票数据`);
+
+        // 如果是策略筛选，自动保存历史记录
+        if (strategy !== "all" && result.data && result.data.length > 0) {
+          saveHistory(strategy, result.data);
+        }
+      } else {
+        console.error("获取股票数据失败:", result.error);
+        // 如果真实数据获取失败，使用模拟数据
+        console.log("使用模拟数据");
+        let mockStocks = generateMockStocks(strategy);
+
+        if (strategy === "5day-trend") {
+          mockStocks.sort((a, b) => (b.trendScore || 0) - (a.trendScore || 0));
+        } else if (strategy === "5day-volume") {
+          mockStocks.sort((a, b) => (b.volumeScore || 0) - (a.volumeScore || 0));
+        } else if (strategy === "leader") {
+          mockStocks.sort((a, b) => (b.leaderScore || 0) - (a.leaderScore || 0));
+          mockStocks = mockStocks.slice(0, 3);
+        }
+
+        setStocks(mockStocks);
+      }
+    } catch (error) {
+      console.error("Error fetching stocks:", error);
+      // 出错时使用模拟数据
+      console.log("出错，使用模拟数据");
       let mockStocks = generateMockStocks(strategy);
 
-      // 根据策略排序
       if (strategy === "5day-trend") {
         mockStocks.sort((a, b) => (b.trendScore || 0) - (a.trendScore || 0));
       } else if (strategy === "5day-volume") {
         mockStocks.sort((a, b) => (b.volumeScore || 0) - (a.volumeScore || 0));
       } else if (strategy === "leader") {
         mockStocks.sort((a, b) => (b.leaderScore || 0) - (a.leaderScore || 0));
-      }
-
-      // 对于策略，只返回评分≥50的股票
-      if (strategy !== "all") {
-        mockStocks = mockStocks.filter((stock) => {
-          if (strategy === "5day-trend") return (stock.trendScore || 0) >= 50;
-          if (strategy === "5day-volume") return (stock.volumeScore || 0) >= 50;
-          if (strategy === "leader") return (stock.leaderScore || 0) >= 50;
-          return true;
-        });
+        mockStocks = mockStocks.slice(0, 3);
       }
 
       setStocks(mockStocks);
-
-      // 如果是策略筛选，自动保存历史记录
-      if (strategy !== "all" && mockStocks.length > 0) {
-        saveHistory(strategy, mockStocks);
-      }
-    } catch (error) {
-      console.error("Error fetching stocks:", error);
     } finally {
       setIsLoading(false);
     }

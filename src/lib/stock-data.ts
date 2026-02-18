@@ -1,581 +1,203 @@
-// 模拟股票数据
+/**
+ * 东方财富股票数据获取模块
+ */
 
-export interface Stock {
-  code: string;
-  name: string;
-  sector: string; // 所属板块
-  price: number;
-  change: number;
-  changePercent: number;
-  volume: number;
-  marketCap: number;
-  // 新增：策略评分
-  trendScore?: number;
-  volumeScore?: number;
-  leaderScore?: number; // 龙头精选评分
+// 东方财富API配置
+const EASTMONEY_API = {
+  // 获取股票列表
+  stockList: "https://push2.eastmoney.com/api/qt/clist/get",
+  // 获取单股票详情
+  stockDetail: "https://push2.eastmoney.com/api/qt/stock/get",
+};
+
+// 常用股票代码列表（用于筛选）
+export const COMMON_STOCKS = [
+  // 白酒
+  "600519", "000858", "000568", "002304", "600809",
+  // 医药
+  "603259", "300750", "000661", "002007", "002422",
+  // 新能源
+  "002594", "300014", "688111", "601012", "300274",
+  // 券商
+  "600030", "300059", "601688", "000166", "002736",
+  // 保险
+  "601318", "601601", "601628", "601336",
+  // 银行
+  "600036", "000001", "002142", "601166", "600000",
+  // 电子
+  "002415", "000725", "688981", "002371", "300474",
+  // 消费
+  "601888", "000333", "002714", "603288", "600887",
+  // 化工
+  "600309", "002648", "600346", "002493", "603260",
+  // 机械
+  "000651", "002475", "300124", "600031", "002202",
+];
+
+export interface StockBasicInfo {
+  f12: string; // 股票代码
+  f14: string; // 股票名称
+  f3: number; // 涨跌幅
+  f4: number; // 最新价
+  f5: number; // 量比
+  f6: number; // 涨跌额
+  f7: number; // 成交量（手）
+  f8: number; // 振幅
+  f9: number; // 最高
+  f10: number; // 最低
+  f11: number; // 今开
+  f15: number; // 最高
+  f16: number; // 最低
+  f17: number; // 成交额
+  f18: number; // 换手率
+  f20: number; // 总市值
+  f21: number; // 流通市值
+  f22: number; // 市盈率
+  f23: number; // 市净率
 }
 
 export interface KLineData {
   date: string;
   open: number;
+  close: number;
   high: number;
   low: number;
-  close: number;
   volume: number;
-  changePercent: number; // 当日涨跌幅
+  amount: number;
 }
 
-export interface StockDetail extends Stock {
-  kline: KLineData[];
-  indicators: {
-    ma5: number[];
-    ma10: number[];
-    ma20: number[];
-    cyc5: number[];  // 5日成本均线
-    cyc21: number[]; // 21日成本均线
-    cyc34: number[]; // 34日成本均线
-    cycInf: number[]; // 无穷成本均线（240日，约一年）
-    macd: { dif: number; dea: number; bar: number };
-    kdj: { k: number; d: number; j: number };
-    rsi: number;
-  };
+/**
+ * 获取股票列表数据
+ */
+export async function getStockList(): Promise<StockBasicInfo[]> {
+  try {
+    const params = new URLSearchParams({
+      pn: "1",
+      pz: "500",
+      po: "1",
+      np: "1",
+      fltt: "2",
+      invt: "2",
+      fid: "f3",
+      fs: "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23",
+      fields: "f12,f14,f3,f4,f5,f6,f7,f8,f9,f10,f11,f15,f16,f17,f18,f20,f21,f22,f23",
+    });
+
+    const response = await fetch(`${EASTMONEY_API.stockList}?${params}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+
+    const data = await response.json();
+
+    if (data?.data?.diff) {
+      return data.data.diff;
+    }
+
+    return [];
+  } catch (error) {
+    console.error("获取股票列表失败:", error);
+    throw error;
+  }
 }
 
-// 模拟股票列表
-export const stockList: Stock[] = [
-  {
-    code: "000001",
-    name: "平安银行",
-    sector: "银行",
-    price: 12.45,
-    change: 0.23,
-    changePercent: 1.88,
-    volume: 52000000,
-    marketCap: 2400000000000,
-  },
-  {
-    code: "000002",
-    name: "万科A",
-    sector: "房地产",
-    price: 18.67,
-    change: -0.15,
-    changePercent: -0.80,
-    volume: 38000000,
-    marketCap: 1800000000000,
-  },
-  {
-    code: "600519",
-    name: "贵州茅台",
-    sector: "白酒",
-    price: 1689.50,
-    change: 12.30,
-    changePercent: 0.73,
-    volume: 2500000,
-    marketCap: 21000000000000,
-  },
-  {
-    code: "600036",
-    name: "招商银行",
-    sector: "银行",
-    price: 35.78,
-    change: 0.85,
-    changePercent: 2.43,
-    volume: 67000000,
-    marketCap: 9200000000000,
-  },
-  {
-    code: "000858",
-    name: "五粮液",
-    sector: "白酒",
-    price: 185.32,
-    change: 3.25,
-    changePercent: 1.78,
-    volume: 4500000,
-    marketCap: 7200000000000,
-  },
-  {
-    code: "600276",
-    name: "恒瑞医药",
-    sector: "医药",
-    price: 52.18,
-    change: 1.45,
-    changePercent: 2.85,
-    volume: 8900000,
-    marketCap: 3300000000000,
-  },
-  {
-    code: "002594",
-    name: "比亚迪",
-    sector: "新能源",
-    price: 256.78,
-    change: 8.92,
-    changePercent: 3.60,
-    volume: 15000000,
-    marketCap: 7500000000000,
-  },
-  {
-    code: "601318",
-    name: "中国平安",
-    sector: "保险",
-    price: 48.56,
-    change: 1.23,
-    changePercent: 2.60,
-    volume: 82000000,
-    marketCap: 8900000000000,
-  },
-  {
-    code: "000725",
-    name: "京东方A",
-    sector: "电子",
-    price: 4.28,
-    change: 0.35,
-    changePercent: 8.90,
-    volume: 180000000,
-    marketCap: 1500000000000,
-  },
-  {
-    code: "300750",
-    name: "宁德时代",
-    sector: "新能源",
-    price: 185.50,
-    change: 15.20,
-    changePercent: 8.93,
-    volume: 25000000,
-    marketCap: 8100000000000,
-  },
-];
+/**
+ * 获取指定股票数据
+ */
+export async function getStockDetail(codes: string[]): Promise<StockBasicInfo[]> {
+  try {
+    const securities = codes.map(code => {
+      const market = code.startsWith('6') ? '1.0.' : '0.0.';
+      return `${market}${code}`;
+    }).join(',');
 
-// 检查5日内是否有涨停板（涨幅>=9.9%）
-function hasLimitUpIn5Days(kline: KLineData[]): boolean {
-  if (kline.length < 5) return false;
-  const recent5 = kline.slice(-5);
-  return recent5.some((d) => d.changePercent >= 9.9);
+    const params = new URLSearchParams({
+      fields: "f12,f14,f3,f4,f5,f6,f7,f8,f9,f10,f11,f15,f16,f17,f18,f20,f21,f22,f23",
+      secids: securities,
+    });
+
+    const response = await fetch(`${EASTMONEY_API.stockDetail}?${params}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+
+    const data = await response.json();
+
+    if (data?.data) {
+      return Object.values(data.data) as StockBasicInfo[];
+    }
+
+    return [];
+  } catch (error) {
+    console.error("获取股票详情失败:", error);
+    throw error;
+  }
 }
 
-// 生成模拟 K 线数据（支持指定趋势）
-function generateKLineData(
-  basePrice: number,
-  days: number = 30,
-  trend: "up" | "down" | "neutral" = "neutral"
-): KLineData[] {
-  const data: KLineData[] = [];
-  let price = basePrice;
+/**
+ * 获取K线数据（目前使用模拟数据）
+ */
+export async function getKLineData(
+  code: string,
+  period: "101" | "102" | "103" = "101"
+): Promise<KLineData[]> {
+  // TODO: 替换为真实的K线数据API
+  // 由于东方财富K线API路径可能需要调整，暂时使用模拟数据
+  console.warn(`股票 ${code} 使用模拟K线数据`);
+  
+  const days = 60;
+  const klines: KLineData[] = [];
   const now = new Date();
-
-  // 根据趋势调整涨跌概率
-  const upProbability = trend === "up" ? 0.65 : trend === "down" ? 0.35 : 0.48;
-
+  
+  // 生成模拟K线数据
   for (let i = days; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split("T")[0];
-
-    const isUp = Math.random() < upProbability;
-    // 增加涨停板概率：最大涨幅可达到 12%
-    const maxChange = isUp ? 0.12 : 0.04;
-    const changePercent = isUp
-      ? Math.random() * maxChange
-      : -Math.random() * maxChange;
-
-    const open = price;
-    const close = price * (1 + changePercent);
-    const high = Math.max(open, close) * (1 + Math.random() * 0.02);
-    const low = Math.min(open, close) * (1 - Math.random() * 0.02);
-
-    // 趋势股成交量放大
-    const baseVolume = Math.random() * 100000000 + 10000000;
-    const volume =
-      trend !== "neutral"
-        ? baseVolume * (1 + Math.random() * 1.5)
-        : baseVolume;
-
-    data.push({
-      date: dateStr,
-      open: Number(open.toFixed(2)),
-      high: Number(high.toFixed(2)),
-      low: Number(low.toFixed(2)),
-      close: Number(close.toFixed(2)),
-      volume: Math.floor(volume),
-      changePercent: Number((changePercent * 100).toFixed(2)),
+    
+    const basePrice = 10 + Math.random() * 20;
+    const volatility = basePrice * 0.05;
+    
+    klines.push({
+      date: date.toISOString().split('T')[0],
+      open: basePrice + (Math.random() - 0.5) * volatility,
+      close: basePrice + (Math.random() - 0.5) * volatility,
+      high: basePrice + volatility * 0.8,
+      low: basePrice - volatility * 0.8,
+      volume: Math.floor(Math.random() * 100000000) + 10000000,
+      amount: Math.floor(Math.random() * 1000000000) + 100000000,
     });
-
-    price = close;
   }
-
-  return data;
-}
-
-// 计算移动平均线
-export function calculateMA(data: number[], period: number): number[] {
-  const result: number[] = [];
-  for (let i = 0; i < data.length; i++) {
-    if (i < period - 1) {
-      result.push(NaN);
-    } else {
-      const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
-      result.push(Number((sum / period).toFixed(2)));
-    }
-  }
-  return result;
+  
+  return klines;
 }
 
 /**
- * 计算CYC成本均线（市场成本均线）
- * CYC基于成交量和成交价计算，反映市场平均持仓成本
- * @param kline K线数据
- * @param period 周期（5、13、34）
+ * 格式化股票数据
  */
-export function calculateCYC(kline: KLineData[], period: number): number[] {
-  if (kline.length < period) {
-    return Array(kline.length).fill(NaN);
-  }
-
-  const result: number[] = [];
-
-  // 计算每日的加权平均价格（VWAP）
-  // VWAP = Σ(价格 × 成交量) / Σ(成交量)
-  const vwap: number[] = kline.map((d) => {
-    // 使用(H+L+C)/3作为当日代表性价格
-    const typicalPrice = (d.high + d.low + d.close) / 3;
-    return Number((typicalPrice).toFixed(2));
-  });
-
-  // 对VWAP进行简单移动平均得到CYC
-  for (let i = 0; i < kline.length; i++) {
-    if (i < period - 1) {
-      result.push(NaN);
-    } else {
-      const sum = vwap.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
-      result.push(Number((sum / period).toFixed(2)));
-    }
-  }
-
-  return result;
-}
-
-// 计算技术指标
-function calculateIndicators(kline: KLineData[]) {
-  const closes = kline.map((d) => d.close);
-
-  // 移动平均线
-  const ma5 = calculateMA(closes, 5);
-  const ma10 = calculateMA(closes, 10);
-  const ma20 = calculateMA(closes, 20);
-
-  // RSI (简化版)
-  let gains = 0;
-  let losses = 0;
-  const period = 14;
-  for (let i = closes.length - period; i < closes.length; i++) {
-    const change = closes[i] - closes[i - 1];
-    if (change > 0) gains += change;
-    else losses -= change;
-  }
-  const rs = gains / (losses || 1);
-  const rsi = Number((100 - 100 / (1 + rs)).toFixed(2));
-
-  // MACD (简化版)
-  const ema12 = calculateMA(closes, 12);
-  const ema26 = calculateMA(closes, 26);
-  const dif = Number((ema12[ema12.length - 1] - ema26[ema26.length - 1]).toFixed(4));
-  const dea = Number((dif * 0.2).toFixed(4));
-  const bar = Number(((dif - dea) * 2).toFixed(4));
-
-  // KDJ (简化版)
-  const recent = kline.slice(-9);
-  const high9 = Math.max(...recent.map((d) => d.high));
-  const low9 = Math.min(...recent.map((d) => d.low));
-  const close9 = recent[recent.length - 1].close;
-  const rsv = ((close9 - low9) / (high9 - low9 || 1)) * 100;
-  const k = Number((rsv * 0.3333 + 50 * 0.6667).toFixed(2));
-  const d = Number((k * 0.3333 + 50 * 0.6667).toFixed(2));
-  const j = Number((3 * k - 2 * d).toFixed(2));
-
-  // CYC成本均线
-  const cyc5 = calculateCYC(kline, 5);
-  const cyc21 = calculateCYC(kline, 21);
-  const cyc34 = calculateCYC(kline, 34);
-  const cycInf = calculateCYC(kline, 240); // 无穷成本均线（240日）
+export function formatStockData(stock: StockBasicInfo) {
+  // 计算涨跌额
+  const price = stock.f4;
+  const changePercent = stock.f3;
+  const prevClose = price / (1 + changePercent / 100);
+  const change = price - prevClose;
 
   return {
-    ma5,
-    ma10,
-    ma20,
-    cyc5,
-    cyc21,
-    cyc34,
-    cycInf,
-    macd: { dif, dea, bar },
-    kdj: { k, d, j },
-    rsi,
+    code: stock.f12,
+    name: stock.f14,
+    price: price,
+    change: change,
+    changePercent: changePercent,
+    volume: stock.f7 * 100, // 转换为股
+    marketCap: stock.f20 * 10000, // 转换为元
+    high: stock.f9,
+    low: stock.f10,
+    open: stock.f11,
+    turnoverRate: stock.f18,
+    volumeRatio: stock.f5,
+    pe: stock.f22,
+    pb: stock.f23,
+    amplitude: stock.f8,
   };
-}
-
-// 计算5日趋势核心评分
-export function calculate5DayTrendScore(kline: KLineData[]): number {
-  const recent5 = kline.slice(-5);
-  if (recent5.length < 5) return 0;
-
-  // 必选条件：5日内至少有一个涨停板
-  if (!hasLimitUpIn5Days(kline)) {
-    return 0;
-  }
-
-  let score = 0;
-
-  // 1. 连阳天数 (权重30)
-  let consecutiveUp = 0;
-  for (let i = recent5.length - 1; i >= 0; i--) {
-    if (recent5[i].close > recent5[i].open) {
-      consecutiveUp++;
-    } else {
-      break;
-    }
-  }
-  score += Math.min(30, consecutiveUp * 10);
-
-  // 2. 5日涨幅 (权重25)
-  const startPrice = recent5[0].close;
-  const endPrice = recent5[recent5.length - 1].close;
-  const changePercent = ((endPrice - startPrice) / startPrice) * 100;
-  if (changePercent > 8) score += 25;
-  else if (changePercent > 5) score += 20;
-  else if (changePercent > 3) score += 15;
-  else if (changePercent > 1) score += 10;
-  else if (changePercent > 0) score += 5;
-
-  // 3. 技术形态 (权重25)
-  const closes = recent5.map((d) => d.close);
-  const ma5 = calculateMA(closes, 5);
-  const lastMA5 = ma5[ma5.length - 1];
-
-  // 价格在MA5上方
-  if (endPrice > lastMA5 && !isNaN(lastMA5)) {
-    score += 10;
-  }
-
-  // 4. MACD金叉 (权重20)
-  const indicators = calculateIndicators(kline);
-  if (indicators.macd.dif > indicators.macd.dea && indicators.macd.bar > 0) {
-    score += 20;
-  }
-
-  return Math.min(100, score);
-}
-
-// 计算5日容量核心评分
-export function calculate5DayVolumeScore(kline: KLineData[], stockPrice: number): number {
-  const recent5 = kline.slice(-5);
-  if (recent5.length < 5) return 0;
-
-  // 必选条件：5日内至少有一个涨停板
-  if (!hasLimitUpIn5Days(kline)) {
-    return 0;
-  }
-
-  let score = 0;
-
-  // 1. 5日均量倍数 (权重35) - 降低门槛
-  const recent5Volume = recent5.map((d) => d.volume);
-  const avg5Volume =
-    recent5Volume.reduce((a, b) => a + b, 0) / recent5Volume.length;
-
-  const recent10 = kline.slice(-10);
-  if (recent10.length >= 10) {
-    const recent10Volume = recent10.map((d) => d.volume);
-    const avg10Volume =
-      recent10Volume.reduce((a, b) => a + b, 0) / recent10Volume.length;
-
-    const volumeRatio = avg5Volume / (avg10Volume || 1);
-    if (volumeRatio > 2.0) score += 35;
-    else if (volumeRatio > 1.5) score += 30;
-    else if (volumeRatio > 1.2) score += 25;
-    else if (volumeRatio > 1.0) score += 20;
-    else if (volumeRatio > 0.8) score += 15;
-  }
-
-  // 2. 换手率 (权重25) - 降低门槛，简化计算
-  const avgVolume = avg5Volume;
-  // 基于市值估算换手率
-  const turnoverRate = (avgVolume / 100000000) * 100; // 以1亿为基准
-
-  if (turnoverRate > 10) score += 25;
-  else if (turnoverRate > 7) score += 20;
-  else if (turnoverRate > 5) score += 15;
-  else if (turnoverRate > 3) score += 10;
-  else if (turnoverRate > 2) score += 5;
-
-  // 3. 成交量递增 (权重20) - 降低门槛
-  let increasingDays = 0;
-  for (let i = 1; i < recent5.length; i++) {
-    if (recent5[i].volume > recent5[i - 1].volume) {
-      increasingDays++;
-    }
-  }
-  if (increasingDays >= 4) score += 20;
-  else if (increasingDays >= 3) score += 18;
-  else if (increasingDays >= 2) score += 15;
-  else if (increasingDays >= 1) score += 10;
-
-  // 4. 量价配合 (权重20) - 降低门槛
-  const priceUpDays = recent5.filter((d) => d.close > d.open).length;
-  if (priceUpDays >= 4 && avgVolume > 30000000) score += 20;
-  else if (priceUpDays >= 3 && avgVolume > 20000000) score += 18;
-  else if (priceUpDays >= 2 && avgVolume > 10000000) score += 15;
-  else if (priceUpDays >= 1 && avgVolume > 5000000) score += 10;
-
-  return Math.min(100, score);
-}
-
-/**
- * 计算龙头精选评分
- * 综合考虑板块龙头、成交量堆积、人气爆棚、量价齐升
- * @param stock 当前股票
- * @param allStocks 所有股票（用于计算板块排名）
- * @param kline K线数据
- */
-export function calculateLeaderScore(stock: Stock, allStocks: Stock[], kline: KLineData[]): number {
-  const recent5 = kline.slice(-5);
-  if (recent5.length < 5) return 0;
-
-  // 必选条件：5日内至少有一个涨停板
-  if (!hasLimitUpIn5Days(kline)) {
-    return 0;
-  }
-
-  let score = 0;
-
-  // 1. 板块龙头（权重30）
-  const sectorStocks = allStocks.filter((s) => s.sector === stock.sector);
-  if (sectorStocks.length > 0) {
-    // 按涨跌幅排名
-    const sortByChange = [...sectorStocks].sort((a, b) => b.changePercent - a.changePercent);
-    const changeRank = sortByChange.findIndex((s) => s.code === stock.code);
-    // 按成交量排名
-    const sortByVolume = [...sectorStocks].sort((a, b) => b.volume - a.volume);
-    const volumeRank = sortByVolume.findIndex((s) => s.code === stock.code);
-
-    // 板块龙头得分（前30%得满分）
-    const top30Percent = Math.ceil(sectorStocks.length * 0.3);
-    const rankScore = Math.min(15, (top30Percent - changeRank) * 5) + 
-                      Math.min(15, (top30Percent - volumeRank) * 5);
-    score += Math.max(0, rankScore);
-  }
-
-  // 2. 成交量堆积（权重25）
-  const recentVolumes = recent5.map((d) => d.volume);
-  const volumeIncreasingDays = recentVolumes.filter((v, i) => {
-    if (i === 0) return false;
-    return v > recentVolumes[i - 1];
-  }).length;
-  if (volumeIncreasingDays >= 4) score += 25;
-  else if (volumeIncreasingDays >= 3) score += 20;
-  else if (volumeIncreasingDays >= 2) score += 15;
-
-  // 3. 人气爆棚（权重25）
-  // 连续涨停或大涨天数
-  const bigRallyDays = recent5.filter((d) => d.changePercent >= 7).length;
-  const consecutiveUpDays = recent5.filter((d) => d.changePercent > 0).length;
-  if (bigRallyDays >= 2) score += 25;
-  else if (bigRallyDays >= 1 && consecutiveUpDays >= 4) score += 20;
-  else if (consecutiveUpDays >= 5) score += 18;
-  else if (consecutiveUpDays >= 4) score += 15;
-
-  // 4. 量价齐升（权重20）
-  let priceVolumeMatchDays = 0;
-  for (let i = 1; i < recent5.length; i++) {
-    const priceUp = recent5[i].close > recent5[i].open;
-    const volumeUp = recent5[i].volume > recent5[i - 1].volume;
-    if (priceUp && volumeUp) {
-      priceVolumeMatchDays++;
-    }
-  }
-  if (priceVolumeMatchDays >= 4) score += 20;
-  else if (priceVolumeMatchDays >= 3) score += 18;
-  else if (priceVolumeMatchDays >= 2) score += 15;
-
-  return Math.min(100, score);
-}
-
-// 获取股票详情
-export function getStockDetail(code: string): StockDetail | null {
-  const stock = stockList.find((s) => s.code === code);
-  if (!stock) return null;
-
-  // 根据股票特点生成对应趋势的K线
-  let trend: "up" | "down" | "neutral" = "neutral";
-  if (stock.changePercent > 3) trend = "up";
-  else if (stock.changePercent < -2) trend = "down";
-
-  const kline = generateKLineData(stock.price, 30, trend);
-  const indicators = calculateIndicators(kline);
-
-  return {
-    ...stock,
-    kline,
-    indicators,
-  };
-}
-
-// 获取股票列表
-export function getStockList(): Stock[] {
-  return stockList;
-}
-
-// 选股策略
-export function selectStocks(strategy: string): Stock[] {
-  let selected: Stock[] = [];
-
-  switch (strategy) {
-    case "5day-trend":
-      // 5日趋势核心
-      selected = stockList
-        .map((stock) => {
-          const kline = generateKLineData(
-            stock.price,
-            30,
-            stock.changePercent > 1 ? "up" : "neutral"
-          );
-          const score = calculate5DayTrendScore(kline);
-          return { ...stock, trendScore: score };
-        })
-        .filter((s) => s.trendScore && s.trendScore >= 50)
-        .sort((a, b) => (b.trendScore || 0) - (a.trendScore || 0));
-      break;
-    case "5day-volume":
-      // 5日容量核心
-      selected = stockList
-        .map((stock) => {
-          const kline = generateKLineData(
-            stock.price,
-            30,
-            stock.changePercent > 0 ? "up" : "neutral"
-          );
-          const score = calculate5DayVolumeScore(kline, stock.price);
-          return { ...stock, volumeScore: score };
-        })
-        .filter((s) => s.volumeScore && s.volumeScore >= 50)
-        .sort((a, b) => (b.volumeScore || 0) - (a.volumeScore || 0));
-      break;
-    case "leader":
-      // 龙头精选：每天筛选出3只最优质的龙头股票
-      selected = stockList
-        .map((stock) => {
-          const kline = generateKLineData(
-            stock.price,
-            30,
-            stock.changePercent > 1 ? "up" : "neutral"
-          );
-          const score = calculateLeaderScore(stock, stockList, kline);
-          return { ...stock, leaderScore: score };
-        })
-        .filter((s) => s.leaderScore && s.leaderScore >= 50)
-        .sort((a, b) => (b.leaderScore || 0) - (a.leaderScore || 0))
-        .slice(0, 3); // 只保留前3只
-      break;
-    default:
-      selected = stockList;
-  }
-
-  return selected;
 }
