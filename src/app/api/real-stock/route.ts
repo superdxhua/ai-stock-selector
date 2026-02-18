@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
     const cyc5 = calculateCYC(standardKLine, 5);
     const cyc21 = calculateCYC(standardKLine, 21);
     const cyc34 = calculateCYC(standardKLine, 34);
+    const cycInf = calculateCYC(standardKLine, 240); // 无穷成本均线
 
     // 计算MA指标
     const closes = standardKLine.map(d => d.close);
@@ -74,6 +75,7 @@ export async function GET(request: NextRequest) {
           cyc5,
           cyc21,
           cyc34,
+          cycInf,
           ma5,
           ma10,
           ma20,

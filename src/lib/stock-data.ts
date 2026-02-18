@@ -32,6 +32,7 @@ export interface StockDetail extends Stock {
     cyc5: number[];  // 5日成本均线
     cyc21: number[]; // 21日成本均线
     cyc34: number[]; // 34日成本均线
+    cycInf: number[]; // 无穷成本均线（240日，约一年）
     macd: { dif: number; dea: number; bar: number };
     kdj: { k: number; d: number; j: number };
     rsi: number;
@@ -282,6 +283,7 @@ function calculateIndicators(kline: KLineData[]) {
   const cyc5 = calculateCYC(kline, 5);
   const cyc21 = calculateCYC(kline, 21);
   const cyc34 = calculateCYC(kline, 34);
+  const cycInf = calculateCYC(kline, 240); // 无穷成本均线（240日）
 
   return {
     ma5,
@@ -290,6 +292,7 @@ function calculateIndicators(kline: KLineData[]) {
     cyc5,
     cyc21,
     cyc34,
+    cycInf,
     macd: { dif, dea, bar },
     kdj: { k, d, j },
     rsi,

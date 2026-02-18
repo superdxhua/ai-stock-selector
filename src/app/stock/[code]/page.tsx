@@ -33,6 +33,7 @@ interface StockDetail {
     cyc5: number[];
     cyc21: number[];
     cyc34: number[];
+    cycInf: number[];
     macd: { dif: number; dea: number; bar: number };
     kdj: { k: number; d: number; j: number };
     rsi: number;
@@ -368,8 +369,18 @@ export default function StockDetailPage() {
                       : "-"}
                   </span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">CYC∞ (无穷成本/240日)</span>
+                  <span className="font-mono font-medium">
+                    {stock.indicators.cycInf && stock.indicators.cycInf[stock.indicators.cycInf.length - 1]
+                      ? stock.indicators.cycInf[
+                          stock.indicators.cycInf.length - 1
+                        ].toFixed(2)
+                      : "-"}
+                  </span>
+                </div>
                 <div className="pt-2 border-t text-xs text-muted-foreground">
-                  CYC反映市场平均持仓成本，价格在CYC上方表示多数投资者盈利
+                  CYC反映市场平均持仓成本，价格在CYC上方表示多数投资者盈利。CYC∞反映长期平均成本（约一年）
                 </div>
               </div>
             </Card>
