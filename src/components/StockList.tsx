@@ -36,21 +36,97 @@ export default function StockList() {
   const [selectedStrategy, setSelectedStrategy] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
 
+  // 生成模拟股票数据
+  const generateMockStocks = (strategy: string): Stock[] => {
+    const stockNames = [
+      { code: "600519", name: "贵州茅台", sector: "白酒" },
+      { code: "000858", name: "五粮液", sector: "白酒" },
+      { code: "603259", name: "药明康德", sector: "医药" },
+      { code: "300750", name: "宁德时代", sector: "新能源" },
+      { code: "002594", name: "比亚迪", sector: "新能源" },
+      { code: "600030", name: "中信证券", sector: "券商" },
+      { code: "601318", name: "中国平安", sector: "保险" },
+      { code: "002415", name: "海康威视", sector: "电子" },
+      { code: "600036", name: "招商银行", sector: "银行" },
+      { code: "000001", name: "平安银行", sector: "银行" },
+      { code: "601888", name: "中国中免", sector: "消费" },
+      { code: "300059", name: "东方财富", sector: "券商" },
+      { code: "688981", name: "中芯国际", sector: "科技" },
+      { code: "600276", name: "恒瑞医药", sector: "医药" },
+      { code: "002142", name: "宁波银行", sector: "银行" },
+    ];
+
+    return stockNames.map((stock) => {
+      const basePrice = Math.random() * 50 + 10;
+      const change = (Math.random() - 0.5) * 5;
+      const changePercent = (change / basePrice) * 100;
+      const volume = Math.floor(Math.random() * 500000000) + 10000000;
+      const marketCap = basePrice * (Math.random() * 100000000 + 50000000);
+
+      let trendScore = 0;
+      let volumeScore = 0;
+      let leaderScore = 0;
+
+      if (strategy === "5day-trend") {
+        trendScore = Math.floor(Math.random() * 50) + 50;
+        volumeScore = Math.floor(Math.random() * 100);
+        leaderScore = Math.floor(Math.random() * 100);
+      } else if (strategy === "5day-volume") {
+        volumeScore = Math.floor(Math.random() * 50) + 50;
+        trendScore = Math.floor(Math.random() * 100);
+        leaderScore = Math.floor(Math.random() * 100);
+      } else if (strategy === "leader") {
+        leaderScore = Math.floor(Math.random() * 50) + 50;
+        trendScore = Math.floor(Math.random() * 100);
+        volumeScore = Math.floor(Math.random() * 100);
+      }
+
+      return {
+        code: stock.code,
+        name: stock.name,
+        sector: stock.sector,
+        price: Number(basePrice.toFixed(2)),
+        change: Number(change.toFixed(2)),
+        changePercent: Number(changePercent.toFixed(2)),
+        volume,
+        marketCap: Math.floor(marketCap),
+        trendScore,
+        volumeScore,
+        leaderScore,
+      };
+    });
+  };
+
   const fetchStocks = async (strategy: string) => {
     setIsLoading(true);
     try {
-      const url = strategy === "all"
-        ? "/api/stocks"
-        : `/api/stocks?strategy=${strategy}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      if (data.success) {
-        setStocks(data.data);
+      // 使用模拟数据
+      let mockStocks = generateMockStocks(strategy);
 
-        // 如果是策略筛选，自动保存历史记录
-        if (strategy !== "all" && data.data && data.data.length > 0) {
-          saveHistory(strategy, data.data);
-        }
+      // 根据策略排序
+      if (strategy === "5day-trend") {
+        mockStocks.sort((a, b) => (b.trendScore || 0) - (a.trendScore || 0));
+      } else if (strategy === "5day-volume") {
+        mockStocks.sort((a, b) => (b.volumeScore || 0) - (a.volumeScore || 0));
+      } else if (strategy === "leader") {
+        mockStocks.sort((a, b) => (b.leaderScore || 0) - (a.leaderScore || 0));
+      }
+
+      // 对于策略，只返回评分≥50的股票
+      if (strategy !== "all") {
+        mockStocks = mockStocks.filter((stock) => {
+          if (strategy === "5day-trend") return (stock.trendScore || 0) >= 50;
+          if (strategy === "5day-volume") return (stock.volumeScore || 0) >= 50;
+          if (strategy === "leader") return (stock.leaderScore || 0) >= 50;
+          return true;
+        });
+      }
+
+      setStocks(mockStocks);
+
+      // 如果是策略筛选，自动保存历史记录
+      if (strategy !== "all" && mockStocks.length > 0) {
+        saveHistory(strategy, mockStocks);
       }
     } catch (error) {
       console.error("Error fetching stocks:", error);
