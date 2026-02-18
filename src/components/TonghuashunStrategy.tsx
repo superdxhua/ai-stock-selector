@@ -50,6 +50,8 @@ function StrategyPanel({
     name: "",
   });
 
+  const [fetchingName, setFetchingName] = useState(false);
+
   const loadStocks = async () => {
     setLoading(true);
     try {
@@ -63,6 +65,33 @@ function StrategyPanel({
       console.error("加载股票失败:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStockName = async (code: string) => {
+    if (code.length !== 6) {
+      setFormData({ ...formData, name: "" });
+      return;
+    }
+
+    setFetchingName(true);
+    try {
+      // 调用获取股票列表的API
+      const response = await fetch("/api/stocks/real?strategy=5day-trend");
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const stock = result.data.find((s: any) => s.code === code);
+        if (stock) {
+          setFormData({ ...formData, code, name: stock.name });
+        } else {
+          setFormData({ ...formData, code, name: "" });
+        }
+      }
+    } catch (error) {
+      console.error("获取股票名称失败:", error);
+    } finally {
+      setFetchingName(false);
     }
   };
 
@@ -263,17 +292,21 @@ function StrategyPanel({
           {!showAddForm && (
             <div className="flex gap-2">
               <Input
-                placeholder="输入股票代码（如：603466）快速添加..."
+                placeholder="输入股票代码（如：603466）自动获取名称..."
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' && formData.code) {
                     setShowAddForm(true);
                   }
                 }}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, code: e.target.value });
+                  fetchStockName(e.target.value);
+                }}
+                value={formData.code}
               />
               <Button
                 onClick={() => setShowAddForm(true)}
-                disabled={!formData.code}
+                disabled={!formData.code || !formData.name}
                 className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -313,7 +346,10 @@ function StrategyPanel({
                         id="code"
                         placeholder="例如：603466"
                         value={formData.code}
-                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, code: e.target.value });
+                          fetchStockName(e.target.value);
+                        }}
                         required
                       />
                     </div>
@@ -321,7 +357,7 @@ function StrategyPanel({
                       <Label htmlFor="name">股票名称</Label>
                       <Input
                         id="name"
-                        placeholder="例如：风语筑"
+                        placeholder="自动获取或手动输入"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         required
