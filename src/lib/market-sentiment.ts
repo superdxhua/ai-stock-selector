@@ -198,9 +198,10 @@ export async function calculateMarketSentiment(): Promise<MarketSentiment | null
 
   // 模拟北向资金（根据指数涨跌计算）
   const northboundInflow = avgChangePercent * 500000000; // 指数每涨跌1%，对应5亿资金
+  const status: "inflow" | "outflow" = northboundInflow >= 0 ? "inflow" : "outflow";
   const northboundMoney = {
     netInflow: Math.round(northboundInflow),
-    status: northboundInflow >= 0 ? "inflow" : "outflow",
+    status,
   };
 
   // 计算情绪分数
