@@ -81,17 +81,15 @@ export async function GET(request: NextRequest) {
     stockList = filterStocks(stockList);
     console.log(`过滤后剩余 ${stockList.length} 只股票（已排除科创板和ST）`);
 
-    // 热点板块筛选（仅对5日趋势和5日容量策略）
-    if (strategy === '5day-trend' || strategy === '5day-volume') {
-      console.log('开始热点板块筛选...');
-      stockList = await filterHotSectorStocks(stockList, 20); // 从前20个热点板块筛选
-      console.log(`热点板块筛选后剩余 ${stockList.length} 只股票`);
-    }
+    // 热点板块筛选（所有策略都使用热点板块）
+    console.log('开始热点板块筛选...');
+    stockList = await filterHotSectorStocks(stockList, 20); // 从前20个热点板块筛选
+    console.log(`热点板块筛选后剩余 ${stockList.length} 只股票`);
 
-    // 策略筛选
-    // 龙头精选需要分析更多股票，以实现优中选优
-    let targetStocks = strategy === 'leader' ? stockList.slice(0, 100) : stockList.slice(0, 30);
-    console.log(`策略筛选，分析${strategy === 'leader' ? 100 : 30}只股票`);
+    // 统一分析前50只股票（所有策略共享数据池）
+    // 这样可以确保龙头精选的股票确实在趋势池和容量池中
+    let targetStocks = stockList.slice(0, 50);
+    console.log(`策略筛选，统一分析50只股票`);
 
     // 转换数据格式
     let stocks: StockWithScore[] = targetStocks.map(stock => {

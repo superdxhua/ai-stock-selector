@@ -344,8 +344,14 @@ export default function StockList() {
                   <TableHead className="text-right font-semibold">涨跌幅</TableHead>
                   <TableHead className="text-right font-semibold">成交量</TableHead>
                   <TableHead className="text-right font-semibold">市值</TableHead>
+                  {showScore && selectedStrategy === "leader" && (
+                    <TableHead className="text-right font-semibold">趋势评分</TableHead>
+                  )}
+                  {showScore && selectedStrategy === "leader" && (
+                    <TableHead className="text-right font-semibold">容量评分</TableHead>
+                  )}
                   {showScore && (
-                    <TableHead className="text-right font-semibold">评分</TableHead>
+                    <TableHead className="text-right font-semibold">综合评分</TableHead>
                   )}
                   <TableHead className="text-right font-semibold">操作</TableHead>
                 </TableRow>
@@ -394,6 +400,26 @@ export default function StockList() {
                     <TableCell className="text-right font-mono text-sm">
                       {formatNumber(stock.marketCap)}
                     </TableCell>
+                    {showScore && selectedStrategy === "leader" && (
+                      <TableCell className="text-right">
+                        <Badge className={getScoreColor(stock.trendScore)}>
+                          <span className="flex items-center gap-1">
+                            <Flame className="w-3 h-3" />
+                            {stock.trendScore || 0}
+                          </span>
+                        </Badge>
+                      </TableCell>
+                    )}
+                    {showScore && selectedStrategy === "leader" && (
+                      <TableCell className="text-right">
+                        <Badge className={getScoreColor(stock.volumeScore)}>
+                          <span className="flex items-center gap-1">
+                            <Flame className="w-3 h-3" />
+                            {stock.volumeScore || 0}
+                          </span>
+                        </Badge>
+                      </TableCell>
+                    )}
                     {showScore && (
                       <TableCell className="text-right">
                         <Badge className={getScoreColor(
@@ -451,7 +477,7 @@ export default function StockList() {
               <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
                 {selectedStrategy === '5day-trend' && '该策略专注于捕捉短期强势上涨的股票，通过分析过去5个交易日的价格走势、成交量变化和技术指标，筛选出趋势评分≥50的潜力股。适合短线交易。'}
                 {selectedStrategy === '5day-volume' && '该策略专注于成交量活跃的股票，通过分析过去5个交易日的成交量、成交额和资金流向，筛选出容量评分≥50的活跃股。适合捕捉主力资金动向。'}
-                {selectedStrategy === 'leader' && '该策略从趋势和容量双池中优中选优，精选3只最优质的龙头股票。龙头股具有涨势强劲、成交活跃、市场认可度高的特点，适合稳健投资者。'}
+                {selectedStrategy === 'leader' && '该策略从趋势池（趋势评分≥50）和容量池（容量评分≥50）的并集中优中选优，综合计算评分后精选出3只最优质的龙头股票。龙头股同时具备趋势强劲和成交活跃的特点，适合稳健投资者。'}
               </p>
             </div>
           </div>
@@ -469,6 +495,12 @@ export default function StockList() {
             <Badge variant="outline" className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
               成交额≥30万
             </Badge>
+            {selectedStrategy === 'leader' && (
+              <Badge variant="outline" className="bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">
+                <Sparkles className="w-3 h-3 mr-1" />
+                趋势池∩容量池
+              </Badge>
+            )}
           </div>
         </div>
       </Card>
