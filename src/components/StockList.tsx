@@ -22,9 +22,6 @@ interface Stock {
 
 const strategies = [
   { id: "all", name: "全部股票", description: "查看所有股票" },
-  { id: "bullish", name: "看涨策略", description: "涨幅 > 2% 的股票" },
-  { id: "value", name: "价值投资", description: "价格 < 50 且市值 > 1000亿" },
-  { id: "growth", name: "成长策略", description: "涨幅 > 0 且成交量 > 5000万" },
   { id: "large-cap", name: "大盘蓝筹", description: "市值 > 5000亿" },
   { id: "5day-trend", name: "5日趋势核心", description: "短期强势上涨股（评分≥50）" },
   { id: "5day-volume", name: "5日容量核心", description: "成交量活跃股（评分≥50）" },

@@ -377,22 +377,6 @@ export function selectStocks(strategy: string): Stock[] {
   let selected: Stock[] = [];
 
   switch (strategy) {
-    case "bullish":
-      // 看涨策略：涨幅 > 2%
-      selected = stockList.filter((s) => s.changePercent > 2);
-      break;
-    case "value":
-      // 价值策略：价格 < 50 且市值 > 1000亿
-      selected = stockList.filter(
-        (s) => s.price < 50 && s.marketCap > 1000000000000
-      );
-      break;
-    case "growth":
-      // 成长策略：涨幅 > 0 且成交量 > 5000万
-      selected = stockList.filter(
-        (s) => s.changePercent > 0 && s.volume > 50000000
-      );
-      break;
     case "large-cap":
       // 大盘股：市值 > 5000亿
       selected = stockList.filter((s) => s.marketCap > 5000000000000);
