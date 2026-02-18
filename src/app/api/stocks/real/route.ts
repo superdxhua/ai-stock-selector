@@ -62,8 +62,9 @@ function filterStocks(stocks: any[]): any[] {
       return false;
     }
 
-    // 排除退市整理期股票
-    if (name.includes('退市') || name.includes('整理')) {
+    // 排除退市风险股票
+    // 包括退市整理期、暂停上市、终止上市等
+    if (name.includes('退市') || name.includes('整理') || name.includes('暂停上市') || name.includes('终止上市')) {
       return false;
     }
 
@@ -78,7 +79,7 @@ function filterStocks(stocks: any[]): any[] {
     }
 
     // 排除名称中包含特殊标记的股票
-    if (name.includes('终止') || name.includes('取消') || name.includes('撤销')) {
+    if (name.includes('终止') || name.includes('取消') || name.includes('撤销') || name.includes('风险警示') || name.includes('警示')) {
       return false;
     }
 
@@ -115,7 +116,7 @@ function filterStocks(stocks: any[]): any[] {
  * - 科创板（688开头）
  * - 北交所（830/831/832开头）
  * - ST股票（包含ST或*ST）
- * - 退市整理期股票
+ * - 退市风险股票（包括退市整理期、暂停上市、终止上市、风险警示等）
  * - 停牌股票
  * - 其他特殊处理股票
  * - 市值700亿元以上的股票
