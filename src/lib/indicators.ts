@@ -403,6 +403,7 @@ export function performTechnicalAnalysis(klines: KLineData[]): TechnicalAnalysis
   // 成交量
   const volumeTrend = calculateVolumeTrend(klines);
   const priceVolumeCorrelation = calculatePriceVolumeCorrelation(klines);
+  const volumeRatio = volumeTrend.avg10Day > 0 ? volumeTrend.avg5Day / volumeTrend.avg10Day : 0; // 5日/10日均量比
 
   // 计算5日趋势核心评分
   let trendScore = 0;
@@ -414,6 +415,13 @@ export function performTechnicalAnalysis(klines: KLineData[]): TechnicalAnalysis
   if (price5DayChange > 3) trendScore += 15; // 5日涨幅>3%
   if (priceAboveMA5) trendScore += 10; // 价格在MA5上方
   if (macdGoldenCross) trendScore += 20; // MACD金叉
+
+  // 成交量评分（5日趋势核心策略也要求成交量活跃）
+  if (volumeRatio >= 1.5) trendScore += 20; // 5日/10日均量比≥1.5倍，明显的成交量堆积
+  else if (volumeRatio >= 1.3) trendScore += 15; // 5日/10日均量比≥1.3倍，成交量较好
+  else if (volumeRatio >= 1.2) trendScore += 10; // 5日/10日均量比≥1.2倍，成交量正常
+  else if (volumeRatio < 1.1) trendScore -= 15; // 5日/10日均量比<1.1倍，成交量低迷，惩罚15分
+
   trendScore = Math.min(Math.round(trendScore * oneSidedPenalty), 100);
 
   // 计算5日容量核心评分
