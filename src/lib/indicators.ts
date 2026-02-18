@@ -221,7 +221,32 @@ export function calculate5DayChange(klines: KLineData[]): number {
 }
 
 /**
- * 检查是否有涨停板
+ * 检查是否为一字板涨停
+ * 一字板特征：涨停且成交量异常低（换手率<1%）
+ */
+export function checkIsOneSidedLimitUp(
+  klines: KLineData[],
+  limitUpRate: number = 9.9
+): boolean {
+  if (klines.length < 2) return false;
+
+  const lastKline = klines[klines.length - 1];
+  const prevClose = klines[klines.length - 2].close;
+
+  // 检查是否涨停
+  const changePercent = ((lastKline.close - prevClose) / prevClose) * 100;
+  if (changePercent < limitUpRate) return false;
+
+  // 检查换手率是否异常低（<1%）
+  // 假设流通股本约10亿股，计算换手率
+  const turnoverRate = (lastKline.volume / (lastKline.close * 100000000)) * 100;
+
+  // 一字板通常换手率很低（<1.5%）
+  return turnoverRate < 1.5;
+}
+
+/**
+ * 检查涨停（非一字板）
  * @param klines K线数据
  * @param days 检查天数，默认5天
  * @param limitUpRate 涨停阈值，默认9.9%
@@ -302,6 +327,7 @@ export interface TechnicalAnalysis {
   consecutiveRises: number;
   price5DayChange: number;
   hasLimitUp: boolean;
+  isOneSidedLimitUp: boolean; // 是否为一字板涨停
 
   // MACD
   macdDif: number;
@@ -347,6 +373,7 @@ export function performTechnicalAnalysis(klines: KLineData[]): TechnicalAnalysis
   const consecutiveRises = calculateConsecutiveRises(klines);
   const price5DayChange = calculate5DayChange(klines);
   const hasLimitUp = checkLimitUp(klines, 5);
+  const isOneSidedLimitUp = checkIsOneSidedLimitUp(klines);
 
   // MACD
   const macdData = calculateMACD(klines);
@@ -378,37 +405,53 @@ export function performTechnicalAnalysis(klines: KLineData[]): TechnicalAnalysis
 
   // 计算5日趋势核心评分
   let trendScore = 0;
-  if (hasLimitUp) trendScore += 25; // 有涨停
+  // 一字板惩罚：一字板的趋势评分大幅降低，因为流动性差
+  const oneSidedPenalty = isOneSidedLimitUp ? 0.3 : 1.0;
+
+  if (hasLimitUp && !isOneSidedLimitUp) trendScore += 25; // 有涨停（排除一字板）
   if (consecutiveRises >= 3) trendScore += 20; // 连续3天以上上涨
   if (price5DayChange > 3) trendScore += 15; // 5日涨幅>3%
   if (priceAboveMA5) trendScore += 10; // 价格在MA5上方
   if (macdGoldenCross) trendScore += 20; // MACD金叉
-  trendScore = Math.min(trendScore, 100);
+  trendScore = Math.min(Math.round(trendScore * oneSidedPenalty), 100);
 
   // 计算5日容量核心评分
   let volumeScore = 0;
-  if (hasLimitUp) volumeScore += 25; // 有涨停
+  // 一字板惩罚：一字板的容量评分应该非常低，因为成交量不足
+  const oneSidedVolumePenalty = isOneSidedLimitUp ? 0.2 : 1.0;
+
+  if (hasLimitUp && !isOneSidedLimitUp) volumeScore += 25; // 有涨停（排除一字板）
   if (volumeTrend.isIncreasing) volumeScore += 35; // 均量倍数>1.2
   const currentVolume = klines[klines.length - 1].volume;
   const avgVolume = volumeTrend.avg10Day;
   const turnoverRate = (currentVolume / (currentPrice * 100000000)) * 100;
-  if (turnoverRate > 3) volumeScore += 25; // 换手率>3%
+
+  // 换手率评分
+  if (turnoverRate > 5) volumeScore += 25; // 换手率>5%（活跃）
+  else if (turnoverRate > 3) volumeScore += 20; // 换手率>3%（正常）
+  else if (turnoverRate > 1.5) volumeScore += 10; // 换手率>1.5%（一般）
+  // 一字板换手率<1.5%，不会得分
+
   if (priceVolumeCorrelation > 50) volumeScore += 15; // 量价配合良好
-  volumeScore = Math.min(volumeScore, 100);
+  volumeScore = Math.min(Math.round(volumeScore * oneSidedVolumePenalty), 100);
 
   // 计算龙头精选评分
   let leaderScore = 0;
-  if (hasLimitUp) leaderScore += 25; // 有涨停
+  // 一字板惩罚：一字板的龙头评分大幅降低
+  const oneSidedLeaderPenalty = isOneSidedLimitUp ? 0.25 : 1.0;
+
+  if (hasLimitUp && !isOneSidedLimitUp) leaderScore += 25; // 有涨停（排除一字板）
   if (consecutiveRises >= 3) leaderScore += 15; // 连续上涨
   if (volumeTrend.isIncreasing) leaderScore += 25; // 成交量堆积
   if (price5DayChange > 5) leaderScore += 20; // 大幅上涨
   if (priceVolumeCorrelation > 60) leaderScore += 15; // 量价齐升
-  leaderScore = Math.min(leaderScore, 100);
+  leaderScore = Math.min(Math.round(leaderScore * oneSidedLeaderPenalty), 100);
 
   return {
     consecutiveRises,
     price5DayChange,
     hasLimitUp,
+    isOneSidedLimitUp,
     macdDif,
     macdDea,
     macdGoldenCross,

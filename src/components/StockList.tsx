@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3, Crown, Sparkles } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3, Crown, Sparkles, AlertCircle, Zap } from "lucide-react";
 import Link from "next/link";
 import StrategyCalendar from "./StrategyCalendar";
 import ConsecutiveStocks from "./ConsecutiveStocks";
@@ -22,6 +22,15 @@ interface Stock {
   trendScore?: number;
   volumeScore?: number;
   leaderScore?: number;
+  technicalAnalysis?: {
+    consecutiveRises?: number;
+    price5DayChange?: number;
+    hasLimitUp?: boolean;
+    isOneSidedLimitUp?: boolean;
+    macdGoldenCross?: boolean;
+    volumeIncreasing?: boolean;
+    priceVolumeCorrelation?: number;
+  };
 }
 
 const strategies = [
@@ -358,9 +367,19 @@ export default function StockList() {
               </TableHeader>
               <TableBody>
                 {stocks.map((stock) => (
-                  <TableRow key={stock.code} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                  <TableRow key={stock.code} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors ${stock.technicalAnalysis?.isOneSidedLimitUp ? 'bg-amber-50/30 dark:bg-amber-950/20' : ''}`}>
                     <TableCell className="font-mono text-sm">{stock.code}</TableCell>
-                    <TableCell className="font-medium">{stock.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {stock.name}
+                        {stock.technicalAnalysis?.isOneSidedLimitUp && (
+                          <Badge className="bg-amber-100 dark:bg-amber-900/50 text-amber-700 border-amber-500/30 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            一字板
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right font-mono font-semibold">
                       {stock.price.toFixed(2)}
                     </TableCell>
@@ -501,6 +520,14 @@ export default function StockList() {
                 趋势池∩容量池
               </Badge>
             )}
+            <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/30 text-amber-700 border-amber-300 dark:border-amber-800 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              一字板降低评分
+            </Badge>
+            <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
+              <Zap className="w-3 h-3" />
+              倾向成交额≥5亿
+            </Badge>
           </div>
         </div>
       </Card>

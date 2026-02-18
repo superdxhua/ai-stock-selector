@@ -133,12 +133,13 @@ export async function GET(request: NextRequest) {
                   consecutiveRises: analysis.consecutiveRises,
                   price5DayChange: analysis.price5DayChange,
                   hasLimitUp: analysis.hasLimitUp,
+                  isOneSidedLimitUp: analysis.isOneSidedLimitUp,
                   macdGoldenCross: analysis.macdGoldenCross,
                   volumeIncreasing: analysis.volumeIncreasing,
                   priceVolumeCorrelation: analysis.priceVolumeCorrelation,
                 };
 
-                console.log(`股票 ${stock.code} ${stock.name} 分析完成: 趋势=${analysis.trendScore}, 容量=${analysis.volumeScore}, 龙头=${analysis.leaderScore}`);
+                console.log(`股票 ${stock.code} ${stock.name} 分析完成: 趋势=${analysis.trendScore}, 容量=${analysis.volumeScore}, 龙头=${analysis.leaderScore}${analysis.isOneSidedLimitUp ? ' [一字板]' : ''}`);
               } else {
                 console.warn(`股票 ${stock.code} ${stock.name} K线数据不足，跳过分析`);
               }
