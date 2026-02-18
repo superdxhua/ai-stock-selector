@@ -11,6 +11,7 @@ export interface Stock {
   // 新增：策略评分
   trendScore?: number;
   volumeScore?: number;
+  cycScore?: number;
 }
 
 export interface KLineData {
@@ -29,6 +30,9 @@ export interface StockDetail extends Stock {
     ma5: number[];
     ma10: number[];
     ma20: number[];
+    cyc5: number[];  // 5日成本均线
+    cyc13: number[]; // 13日成本均线
+    cyc34: number[]; // 34日成本均线
     macd: { dif: number; dea: number; bar: number };
     kdj: { k: number; d: number; j: number };
     rsi: number;
@@ -190,7 +194,7 @@ function generateKLineData(
 }
 
 // 计算移动平均线
-function calculateMA(data: number[], period: number): number[] {
+export function calculateMA(data: number[], period: number): number[] {
   const result: number[] = [];
   for (let i = 0; i < data.length; i++) {
     if (i < period - 1) {
@@ -200,6 +204,40 @@ function calculateMA(data: number[], period: number): number[] {
       result.push(Number((sum / period).toFixed(2)));
     }
   }
+  return result;
+}
+
+/**
+ * 计算CYC成本均线（市场成本均线）
+ * CYC基于成交量和成交价计算，反映市场平均持仓成本
+ * @param kline K线数据
+ * @param period 周期（5、13、34）
+ */
+export function calculateCYC(kline: KLineData[], period: number): number[] {
+  if (kline.length < period) {
+    return Array(kline.length).fill(NaN);
+  }
+
+  const result: number[] = [];
+
+  // 计算每日的加权平均价格（VWAP）
+  // VWAP = Σ(价格 × 成交量) / Σ(成交量)
+  const vwap: number[] = kline.map((d) => {
+    // 使用(H+L+C)/3作为当日代表性价格
+    const typicalPrice = (d.high + d.low + d.close) / 3;
+    return Number((typicalPrice).toFixed(2));
+  });
+
+  // 对VWAP进行简单移动平均得到CYC
+  for (let i = 0; i < kline.length; i++) {
+    if (i < period - 1) {
+      result.push(NaN);
+    } else {
+      const sum = vwap.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+      result.push(Number((sum / period).toFixed(2)));
+    }
+  }
+
   return result;
 }
 
@@ -241,10 +279,18 @@ function calculateIndicators(kline: KLineData[]) {
   const d = Number((k * 0.3333 + 50 * 0.6667).toFixed(2));
   const j = Number((3 * k - 2 * d).toFixed(2));
 
+  // CYC成本均线
+  const cyc5 = calculateCYC(kline, 5);
+  const cyc13 = calculateCYC(kline, 13);
+  const cyc34 = calculateCYC(kline, 34);
+
   return {
     ma5,
     ma10,
     ma20,
+    cyc5,
+    cyc13,
+    cyc34,
     macd: { dif, dea, bar },
     kdj: { k, d, j },
     rsi,
@@ -252,7 +298,7 @@ function calculateIndicators(kline: KLineData[]) {
 }
 
 // 计算5日趋势核心评分
-function calculate5DayTrendScore(kline: KLineData[]): number {
+export function calculate5DayTrendScore(kline: KLineData[]): number {
   const recent5 = kline.slice(-5);
   if (recent5.length < 5) return 0;
 
@@ -304,7 +350,7 @@ function calculate5DayTrendScore(kline: KLineData[]): number {
 }
 
 // 计算5日容量核心评分
-function calculate5DayVolumeScore(kline: KLineData[], stockPrice: number): number {
+export function calculate5DayVolumeScore(kline: KLineData[], stockPrice: number): number {
   const recent5 = kline.slice(-5);
   if (recent5.length < 5) return 0;
 
@@ -363,6 +409,72 @@ function calculate5DayVolumeScore(kline: KLineData[], stockPrice: number): numbe
   else if (priceUpDays >= 3 && avgVolume > 20000000) score += 18;
   else if (priceUpDays >= 2 && avgVolume > 10000000) score += 15;
   else if (priceUpDays >= 1 && avgVolume > 5000000) score += 10;
+
+  return Math.min(100, score);
+}
+
+// 计算CYC成本均线选股评分
+function calculateCYCScore(kline: KLineData[]): number {
+  if (kline.length < 34) return 0; // 需要至少34天数据
+
+  // 必选条件：5日内至少有一个涨停板
+  if (!hasLimitUpIn5Days(kline)) {
+    return 0;
+  }
+
+  const cyc5 = calculateCYC(kline, 5);
+  const cyc13 = calculateCYC(kline, 13);
+  const cyc34 = calculateCYC(kline, 34);
+  const closes = kline.map((d) => d.close);
+  const lastClose = closes[closes.length - 1];
+  const lastCyc5 = cyc5[cyc5.length - 1];
+  const lastCyc13 = cyc13[cyc13.length - 1];
+  const lastCyc34 = cyc34[cyc34.length - 1];
+
+  let score = 0;
+
+  // 1. 价格与CYC5的关系 (权重30)
+  if (lastClose > lastCyc5 && !isNaN(lastCyc5)) {
+    score += 30;
+  }
+
+  // 2. CYC多头排列 (权重35) - CYC5 > CYC13 > CYC34
+  if (
+    lastCyc5 > lastCyc13 &&
+    lastCyc13 > lastCyc34 &&
+    !isNaN(lastCyc5) &&
+    !isNaN(lastCyc13) &&
+    !isNaN(lastCyc34)
+  ) {
+    score += 35;
+  } else if (
+    lastCyc5 > lastCyc13 &&
+    !isNaN(lastCyc5) &&
+    !isNaN(lastCyc13)
+  ) {
+    score += 20; // 部分多头排列
+  }
+
+  // 3. CYC13支撑有效 (权重20) - 价格在CYC13上方或接近CYC13
+  const distanceToCyc13 = Math.abs((lastClose - lastCyc13) / lastCyc13);
+  if (distanceToCyc13 < 0.02 && lastClose > lastCyc13 && !isNaN(lastCyc13)) {
+    // 价格在CYC13上方2%范围内
+    score += 20;
+  } else if (lastClose > lastCyc13 && !isNaN(lastCyc13)) {
+    score += 10;
+  }
+
+  // 4. CYC趋势向上 (权重15) - 最近5日CYC5持续上升
+  const recentCyc5 = cyc5.slice(-5);
+  let cyc5RisingDays = 0;
+  for (let i = 1; i < recentCyc5.length; i++) {
+    if (recentCyc5[i] > recentCyc5[i - 1] && !isNaN(recentCyc5[i]) && !isNaN(recentCyc5[i - 1])) {
+      cyc5RisingDays++;
+    }
+  }
+  if (cyc5RisingDays >= 4) score += 15;
+  else if (cyc5RisingDays >= 3) score += 12;
+  else if (cyc5RisingDays >= 2) score += 8;
 
   return Math.min(100, score);
 }
@@ -426,6 +538,21 @@ export function selectStocks(strategy: string): Stock[] {
         })
         .filter((s) => s.volumeScore && s.volumeScore >= 50)
         .sort((a, b) => (b.volumeScore || 0) - (a.volumeScore || 0));
+      break;
+    case "cyc":
+      // CYC成本均线策略
+      selected = stockList
+        .map((stock) => {
+          const kline = generateKLineData(
+            stock.price,
+            34,
+            stock.changePercent > 1 ? "up" : "neutral"
+          );
+          const score = calculateCYCScore(kline);
+          return { ...stock, cycScore: score };
+        })
+        .filter((s) => s.cycScore && s.cycScore >= 50)
+        .sort((a, b) => (b.cycScore || 0) - (a.cycScore || 0));
       break;
     default:
       selected = stockList;

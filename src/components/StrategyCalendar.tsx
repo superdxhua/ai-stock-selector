@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Calendar, Flame, BarChart3 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Flame, BarChart3, Activity } from "lucide-react";
 
 interface CalendarDay {
   date: string;
@@ -180,6 +180,8 @@ export default function StrategyCalendar({ strategy }: { strategy: string }) {
           <h4 className="font-semibold mb-4 flex items-center gap-2">
             {strategy === "5day-trend" ? (
               <Flame className="w-5 h-5 text-red-600" />
+            ) : strategy === "cyc" ? (
+              <Activity className="w-5 h-5 text-purple-600" />
             ) : (
               <BarChart3 className="w-5 h-5 text-purple-600" />
             )}

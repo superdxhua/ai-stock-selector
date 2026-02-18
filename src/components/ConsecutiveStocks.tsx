@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Flame, TrendingUp, Clock } from "lucide-react";
+import { Loader2, Flame, TrendingUp, Clock, Activity } from "lucide-react";
 
 interface ConsecutiveStock {
   stockCode: string;
@@ -80,6 +80,8 @@ export default function ConsecutiveStocks({ strategy }: { strategy: string }) {
                   <div className="flex items-center gap-2">
                     {strategy === "5day-trend" ? (
                       <Flame className="w-5 h-5 text-red-600" />
+                    ) : strategy === "cyc" ? (
+                      <Activity className="w-5 h-5 text-purple-600" />
                     ) : (
                       <TrendingUp className="w-5 h-5 text-purple-600" />
                     )}

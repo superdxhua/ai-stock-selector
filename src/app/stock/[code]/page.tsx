@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Loader2, Activity } from "lucide-react";
 import StockChart from "@/components/StockChart";
 
 interface KLineData {
@@ -30,6 +30,9 @@ interface StockDetail {
     ma5: number[];
     ma10: number[];
     ma20: number[];
+    cyc5: number[];
+    cyc13: number[];
+    cyc34: number[];
     macd: { dif: number; dea: number; bar: number };
     kdj: { k: number; d: number; j: number };
     rsi: number;
@@ -324,6 +327,49 @@ export default function StockDetailPage() {
                         ].toFixed(2)
                       : "-"}
                   </span>
+                </div>
+              </div>
+            </Card>
+
+            {/* CYC成本均线 */}
+            <Card className="p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <Activity className="w-5 h-5 text-purple-600" />
+                CYC成本均线
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">CYC5 (5日成本)</span>
+                  <span className="font-mono font-medium">
+                    {stock.indicators.cyc5 && stock.indicators.cyc5[stock.indicators.cyc5.length - 1]
+                      ? stock.indicators.cyc5[
+                          stock.indicators.cyc5.length - 1
+                        ].toFixed(2)
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">CYC13 (13日成本)</span>
+                  <span className="font-mono font-medium">
+                    {stock.indicators.cyc13 && stock.indicators.cyc13[stock.indicators.cyc13.length - 1]
+                      ? stock.indicators.cyc13[
+                          stock.indicators.cyc13.length - 1
+                        ].toFixed(2)
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">CYC34 (34日成本)</span>
+                  <span className="font-mono font-medium">
+                    {stock.indicators.cyc34 && stock.indicators.cyc34[stock.indicators.cyc34.length - 1]
+                      ? stock.indicators.cyc34[
+                          stock.indicators.cyc34.length - 1
+                        ].toFixed(2)
+                      : "-"}
+                  </span>
+                </div>
+                <div className="pt-2 border-t text-xs text-muted-foreground">
+                  CYC反映市场平均持仓成本，价格在CYC上方表示多数投资者盈利
                 </div>
               </div>
             </Card>
