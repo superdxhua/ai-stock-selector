@@ -10,10 +10,10 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    const { code } = params;
+    const { code } = await params;
 
     const client = getSupabaseClient();
 
