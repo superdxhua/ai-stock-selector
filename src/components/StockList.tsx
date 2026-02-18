@@ -25,7 +25,6 @@ interface Stock {
 }
 
 const strategies = [
-  { id: "all", name: "全部股票", description: "查看所有股票" },
   { id: "5day-trend", name: "5日趋势核心", description: "短期强势上涨股（评分≥50）" },
   { id: "5day-volume", name: "5日容量核心", description: "成交量活跃股（评分≥50）" },
   { id: "leader", name: "龙头精选", description: "每天精选3只最优质龙头（评分≥50）" },
@@ -33,7 +32,7 @@ const strategies = [
 
 export default function StockList() {
   const [stocks, setStocks] = useState<Stock[]>([]);
-  const [selectedStrategy, setSelectedStrategy] = useState("all");
+  const [selectedStrategy, setSelectedStrategy] = useState("5day-trend");
   const [isLoading, setIsLoading] = useState(false);
 
   // 生成模拟股票数据
@@ -103,10 +102,8 @@ export default function StockList() {
   const fetchStocks = async (strategy: string) => {
     setIsLoading(true);
     try {
-      // 使用东方财富真实数据API
-      const url = strategy === "all"
-        ? "/api/stocks/real"
-        : `/api/stocks/real?strategy=${strategy}`;
+      // 使用东方财富真实数据API（策略筛选）
+      const url = `/api/stocks/real?strategy=${strategy}`;
 
       const response = await fetch(url);
       const result = await response.json();
@@ -115,8 +112,8 @@ export default function StockList() {
         setStocks(result.data);
         console.log(`获取到 ${result.data?.length || 0} 只股票数据（来自东方财富）`);
 
-        // 如果是策略筛选，自动保存历史记录
-        if (strategy !== "all" && result.data && result.data.length > 0) {
+        // 自动保存历史记录
+        if (result.data && result.data.length > 0) {
           saveHistory(strategy, result.data);
         }
       } else {
@@ -357,20 +354,11 @@ export default function StockList() {
             <p className="text-xs text-yellow-700 dark:text-yellow-300">💡 每天仅筛选出3只综合评分最高的龙头股票，关注短期大幅上涨机会</p>
           </div>
         )}
-        {selectedStrategy !== "5day-trend" && selectedStrategy !== "5day-volume" && selectedStrategy !== "leader" && (
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            {currentStrategy?.description}
-          </p>
-        )}
       </Card>
 
-      {/* 日历和连续上榜（仅策略模式下显示） */}
-      {(selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume" || selectedStrategy === "leader") && (
-        <>
-          <StrategyCalendar strategy={selectedStrategy} />
-          <ConsecutiveStocks strategy={selectedStrategy} />
-        </>
-      )}
+      {/* 日历和连续上榜 */}
+      <StrategyCalendar strategy={selectedStrategy} />
+      <ConsecutiveStocks strategy={selectedStrategy} />
     </div>
   );
 }

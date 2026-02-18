@@ -37,12 +37,13 @@ interface StockWithScore {
 
 /**
  * GET /api/stocks/real - 获取真实股票数据
- * 支持策略筛选参数: strategy=all|5day-trend|5day-volume|leader
+ * 支持策略筛选参数: strategy=5day-trend|5day-volume|leader
+ * 默认策略: 5day-trend
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const strategy = searchParams.get('strategy') || 'all';
+    const strategy = searchParams.get('strategy') || '5day-trend';
 
     console.log(`开始获取股票数据，策略: ${strategy}`);
 
@@ -60,13 +61,9 @@ export async function GET(request: NextRequest) {
 
     console.log(`获取到 ${stockList.length} 只股票`);
 
-    // 如果是策略筛选，分析获取到的股票
-    let targetStocks = stockList;
-    if (strategy !== 'all') {
-      // 只分析前30只股票，避免API调用过多
-      targetStocks = stockList.slice(0, 30);
-      console.log(`策略筛选，分析前30只股票`);
-    }
+    // 策略筛选，分析前30只股票
+    let targetStocks = stockList.slice(0, 30);
+    console.log(`策略筛选，分析前30只股票`);
 
     // 转换数据格式
     let stocks: StockWithScore[] = targetStocks.map(stock => {
@@ -83,8 +80,8 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // 如果是策略筛选，获取K线数据并进行技术分析
-    if (strategy !== 'all' && stocks.length > 0) {
+    // 获取K线数据并进行技术分析
+    if (stocks.length > 0) {
       console.log('开始获取K线数据进行技术分析...');
 
       // 限制并发请求数量，避免API限流
