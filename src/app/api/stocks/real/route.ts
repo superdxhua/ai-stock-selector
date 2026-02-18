@@ -15,6 +15,7 @@ import { getStockList, getKLineData, COMMON_STOCKS, formatStockData } from '@/li
 import { performTechnicalAnalysis } from '@/lib/indicators';
 import { filterStocks } from '@/lib/stock-filter';
 import { performEnhancedTechnicalAnalysis, enhanceStrategyScores } from '@/lib/bull-integration';
+import { filterHotSectorStocks } from '@/lib/hot-sectors';
 
 interface StockWithScore {
   code: string;
@@ -79,6 +80,13 @@ export async function GET(request: NextRequest) {
     // 过滤科创板和ST股票
     stockList = filterStocks(stockList);
     console.log(`过滤后剩余 ${stockList.length} 只股票（已排除科创板和ST）`);
+
+    // 热点板块筛选（仅对5日趋势和5日容量策略）
+    if (strategy === '5day-trend' || strategy === '5day-volume') {
+      console.log('开始热点板块筛选...');
+      stockList = await filterHotSectorStocks(stockList, 20); // 从前20个热点板块筛选
+      console.log(`热点板块筛选后剩余 ${stockList.length} 只股票`);
+    }
 
     // 策略筛选
     // 龙头精选需要分析更多股票，以实现优中选优
