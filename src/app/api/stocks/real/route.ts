@@ -52,8 +52,33 @@ function filterStocks(stocks: any[]): any[] {
       return false;
     }
 
+    // 排除北交所股票（830/831/832开头）
+    if (code.startsWith('830') || code.startsWith('831') || code.startsWith('832')) {
+      return false;
+    }
+
     // 排除ST股票（名称包含"ST"或"*ST"）
     if (name.includes('ST') || name.includes('*ST')) {
+      return false;
+    }
+
+    // 排除退市整理期股票
+    if (name.includes('退市') || name.includes('整理')) {
+      return false;
+    }
+
+    // 排除停牌股票
+    if (name.includes('停牌')) {
+      return false;
+    }
+
+    // 排除其他特殊处理的股票（S、SST、S*ST等）
+    if (/^S\*?ST/.test(name)) {
+      return false;
+    }
+
+    // 排除名称中包含特殊标记的股票
+    if (name.includes('终止') || name.includes('取消') || name.includes('撤销')) {
       return false;
     }
 
@@ -65,6 +90,14 @@ function filterStocks(stocks: any[]): any[] {
  * GET /api/stocks/real - 获取真实股票数据
  * 支持策略筛选参数: strategy=5day-trend|5day-volume|leader
  * 默认策略: 5day-trend
+ * 
+ * 注意：自动过滤以下类型股票
+ * - 科创板（688开头）
+ * - 北交所（830/831/832开头）
+ * - ST股票（包含ST或*ST）
+ * - 退市整理期股票
+ * - 停牌股票
+ * - 其他特殊处理股票
  */
 export async function GET(request: NextRequest) {
   try {
