@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
               const klines = await getKLineData(stock.code, '101');
 
               if (klines.length >= 35) {
-                const analysis = performTechnicalAnalysis(klines);
+                const analysis = performTechnicalAnalysis(klines, stock.code);
 
                 stock.trendScore = analysis.trendScore;
                 stock.volumeScore = analysis.volumeScore;

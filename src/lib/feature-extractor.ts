@@ -20,7 +20,8 @@ export function extractBullStockFeatures(
   volume: number,
   turnoverRate: number,
   pe: number,
-  pb: number
+  pb: number,
+  stockCode?: string
 ): BullStockFeatures {
   if (klines.length < 60) {
     // 数据不足，返回默认低分特征
@@ -37,7 +38,7 @@ export function extractBullStockFeatures(
   const technicalFeatures = extractTechnicalFeatures(klines);
 
   // 4. 提取形态特征
-  const patternFeatures = extractPatternFeatures(klines, currentPrice);
+  const patternFeatures = extractPatternFeatures(klines, currentPrice, stockCode);
 
   // 5. 提取基本面特征
   const fundamentalFeatures = extractFundamentalFeatures(marketCap, pe, pb);
@@ -159,26 +160,56 @@ function extractTechnicalFeatures(klines: KLineData[]) {
 }
 
 /**
+ * 获取涨停板阈值
+ * @param stockCode 股票代码
+ * @returns 涨停板阈值（百分比）
+ */
+function getLimitUpThreshold(stockCode?: string): number {
+  // 创业板（300开头）和科创板（688开头）的涨停板为20%
+  // 主板（600、000、002开头）的涨停板为10%
+  if (stockCode && (stockCode.startsWith('300') || stockCode.startsWith('688'))) {
+    return 19.9; // 创业板和科创板涨停板约为19.9%
+  }
+  return 9.9; // 主板涨停板约为9.9%
+}
+
+/**
  * 提取形态特征
  */
-function extractPatternFeatures(klines: KLineData[], currentPrice: number) {
-  // 检查是否有涨停（涨幅>=9.9%）
-  // 排除最新交易日，检查过去5个交易日
-  const hasLimitUp = klines.slice(-6, -1).some((k, i, arr) => {
-    const idx = klines.length - 6 + i + 1; // 实际索引
-    if (idx === 0) return false;
-    const prevClose = klines[idx - 1].close;
-    const changePercent = ((k.close - prevClose) / prevClose) * 100;
-    return changePercent >= 9.9;
+function extractPatternFeatures(klines: KLineData[], currentPrice: number, stockCode?: string) {
+  const limitUpRate = getLimitUpThreshold(stockCode);
+
+  // 检查是否有涨停（包括最新交易日在内）
+  const hasLimitUp = klines.slice(-5).some((k, i) => {
+    const idx = klines.length - 5 + i;
+    if (idx === 0) {
+      // 第一天数据，无法计算涨跌幅
+      const open = k.open;
+      const high = k.high;
+      const close = k.close;
+      // 如果开盘即涨停（一字板），或者收盘价达到涨停
+      const changePercent = ((high - open) / open) * 100;
+      return changePercent >= limitUpRate;
+    } else {
+      const prevClose = klines[idx - 1].close;
+      const changePercent = ((k.close - prevClose) / prevClose) * 100;
+      return changePercent >= limitUpRate;
+    }
   });
 
-  // 计算近期涨停次数（排除最新交易日）
-  const limitUpCount = klines.slice(-21, -1).filter((k, i, arr) => {
-    const idx = klines.length - 21 + i + 1; // 实际索引
-    if (idx === 0) return false;
-    const prevClose = klines[idx - 1].close;
-    const changePercent = ((k.close - prevClose) / prevClose) * 100;
-    return changePercent >= 9.9;
+  // 计算近期涨停次数（包括最新交易日在内）
+  const limitUpCount = klines.slice(-20).filter((k, i) => {
+    const idx = klines.length - 20 + i;
+    if (idx === 0) {
+      const open = k.open;
+      const high = k.high;
+      const changePercent = ((high - open) / open) * 100;
+      return changePercent >= limitUpRate;
+    } else {
+      const prevClose = klines[idx - 1].close;
+      const changePercent = ((k.close - prevClose) / prevClose) * 100;
+      return changePercent >= limitUpRate;
+    }
   }).length;
 
   // 判断是否多头排列

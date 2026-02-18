@@ -246,23 +246,50 @@ export function checkIsOneSidedLimitUp(
 }
 
 /**
- * 检查涨停（非一字板）
- * @param klines K线数据
- * @param days 检查天数，默认5天（排除最新交易日，检查过去5个交易日）
- * @param limitUpRate 涨停阈值，默认9.9%
+ * 获取涨停板阈值
+ * @param stockCode 股票代码
+ * @returns 涨停板阈值（百分比）
  */
-export function checkLimitUp(klines: KLineData[], days: number = 5, limitUpRate: number = 9.9): boolean {
-  if (klines.length < days + 1) return false; // 至少需要days+1天数据
+export function getLimitUpThreshold(stockCode: string): number {
+  // 创业板（300开头）和科创板（688开头）的涨停板为20%
+  // 主板（600、000、002开头）的涨停板为10%
+  if (stockCode.startsWith('300') || stockCode.startsWith('688')) {
+    return 19.9; // 创业板和科创板涨停板约为19.9%
+  }
+  return 9.9; // 主板涨停板约为9.9%
+}
 
-  const checkDays = Math.min(days, klines.length - 1); // 排除最新交易日
+/**
+ * 检查涨停
+ * @param klines K线数据
+ * @param days 检查天数，默认5天（包括最新交易日）
+ * @param stockCode 股票代码，用于判断涨停板阈值
+ */
+export function checkLimitUp(klines: KLineData[], days: number = 5, stockCode?: string): boolean {
+  if (klines.length < 1) return false;
 
-  // 从倒数第2天开始检查（排除今天）
-  for (let i = klines.length - 2; i >= klines.length - 1 - checkDays; i--) {
-    const prevClose = klines[i - 1].close;
-    const changePercent = ((klines[i].close - prevClose) / prevClose) * 100;
+  const limitUpRate = stockCode ? getLimitUpThreshold(stockCode) : 9.9;
+  const checkDays = Math.min(days, klines.length);
 
-    if (changePercent >= limitUpRate) {
-      return true;
+  // 检查最近N个交易日（包括今天）
+  for (let i = klines.length - 1; i >= klines.length - checkDays; i--) {
+    if (i === 0) {
+      // 第一天数据，无法计算涨跌幅
+      const open = klines[i].open;
+      const high = klines[i].high;
+      const close = klines[i].close;
+      // 如果开盘即涨停（一字板），或者收盘价达到涨停
+      const changePercent = ((high - open) / open) * 100;
+      if (changePercent >= limitUpRate) {
+        return true;
+      }
+    } else {
+      const prevClose = klines[i - 1].close;
+      const changePercent = ((klines[i].close - prevClose) / prevClose) * 100;
+
+      if (changePercent >= limitUpRate) {
+        return true;
+      }
     }
   }
   return false;
@@ -368,13 +395,16 @@ export interface TechnicalAnalysis {
 
 /**
  * 进行综合技术分析
+ * @param klines K线数据
+ * @param stockCode 股票代码，用于判断涨停板阈值
  */
-export function performTechnicalAnalysis(klines: KLineData[]): TechnicalAnalysis {
+export function performTechnicalAnalysis(klines: KLineData[], stockCode?: string): TechnicalAnalysis {
   // 基础指标
   const consecutiveRises = calculateConsecutiveRises(klines);
   const price5DayChange = calculate5DayChange(klines);
-  const hasLimitUp = checkLimitUp(klines, 5);
-  const isOneSidedLimitUp = checkIsOneSidedLimitUp(klines);
+  const limitUpRate = stockCode ? getLimitUpThreshold(stockCode) : 9.9;
+  const hasLimitUp = checkLimitUp(klines, 5, stockCode);
+  const isOneSidedLimitUp = checkIsOneSidedLimitUp(klines, limitUpRate);
 
   // MACD
   const macdData = calculateMACD(klines);
