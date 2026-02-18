@@ -89,6 +89,19 @@ function filterStocks(stocks: any[]): any[] {
       return false;
     }
 
+    // 排除市值40亿元以下的股票
+    if (marketCap && marketCap < 4000000000) {
+      return false;
+    }
+
+    // 排除成交额过低的股票
+    // 注意：f17字段是成交额（单位：万元），当前数据集中成交额普遍较低
+    // 暂时设置为30万元，可根据实际情况调整
+    const amount = stock.f17 || stock.amount;
+    if (amount && amount < 30) {  // 30万元
+      return false;
+    }
+
     return true;
   });
 }
@@ -106,6 +119,8 @@ function filterStocks(stocks: any[]): any[] {
  * - 停牌股票
  * - 其他特殊处理股票
  * - 市值700亿元以上的股票
+ * - 市值40亿元以下的股票
+ * - 成交额30万元以下的股票（f17字段，单位：万元，可根据实际情况调整）
  */
 export async function GET(request: NextRequest) {
   try {
