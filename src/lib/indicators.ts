@@ -302,22 +302,26 @@ export function calculateVolumeTrend(klines: KLineData[]): {
   isIncreasing: boolean;
   avg5Day: number;
   avg10Day: number;
+  avg20Day: number;
 } {
-  if (klines.length < 10) {
-    return { isIncreasing: false, avg5Day: 0, avg10Day: 0 };
+  if (klines.length < 20) {
+    return { isIncreasing: false, avg5Day: 0, avg10Day: 0, avg20Day: 0 };
   }
 
   const recent5Days = klines.slice(-5).map(k => k.volume);
   const recent10Days = klines.slice(-10).map(k => k.volume);
+  const recent20Days = klines.slice(-20).map(k => k.volume);
 
   const avg5Day = recent5Days.reduce((a, b) => a + b, 0) / 5;
   const avg10Day = recent10Days.reduce((a, b) => a + b, 0) / 10;
+  const avg20Day = recent20Days.reduce((a, b) => a + b, 0) / 20;
 
   // 5日均量大于10日均量的1.2倍
   return {
     isIncreasing: avg5Day > avg10Day * 1.2,
     avg5Day,
     avg10Day,
+    avg20Day,
   };
 }
 
@@ -379,6 +383,7 @@ export interface TechnicalAnalysis {
   // 成交量
   volume5DayAvg: number;
   volume10DayAvg: number;
+  volume20DayAvg: number;
   volumeIncreasing: boolean;
   priceVolumeCorrelation: number;
 
@@ -433,7 +438,7 @@ export function performTechnicalAnalysis(klines: KLineData[], stockCode?: string
   // 成交量
   const volumeTrend = calculateVolumeTrend(klines);
   const priceVolumeCorrelation = calculatePriceVolumeCorrelation(klines);
-  const volumeRatio = volumeTrend.avg10Day > 0 ? volumeTrend.avg5Day / volumeTrend.avg10Day : 0; // 5日/10日均量比
+  const volumeRatio = volumeTrend.avg20Day > 0 ? volumeTrend.avg5Day / volumeTrend.avg20Day : 0; // 5日/20日均量比
 
   // 计算5日趋势核心评分
   let trendScore = 0;
@@ -447,10 +452,11 @@ export function performTechnicalAnalysis(klines: KLineData[], stockCode?: string
   if (macdGoldenCross) trendScore += 20; // MACD金叉
 
   // 成交量评分（5日趋势核心策略也要求成交量活跃）
-  if (volumeRatio >= 1.5) trendScore += 20; // 5日/10日均量比≥1.5倍，明显的成交量堆积
-  else if (volumeRatio >= 1.3) trendScore += 15; // 5日/10日均量比≥1.3倍，成交量较好
-  else if (volumeRatio >= 1.2) trendScore += 10; // 5日/10日均量比≥1.2倍，成交量正常
-  else if (volumeRatio < 1.1) trendScore -= 15; // 5日/10日均量比<1.1倍，成交量低迷，惩罚15分
+  // 使用5日/20日均量比，更能体现长期的成交量堆积特征
+  if (volumeRatio >= 1.3) trendScore += 20; // 5日/20日均量比≥1.3倍，明显的成交量堆积
+  else if (volumeRatio >= 1.15) trendScore += 15; // 5日/20日均量比≥1.15倍，成交量较好
+  else if (volumeRatio >= 1.05) trendScore += 10; // 5日/20日均量比≥1.05倍，成交量正常
+  else if (volumeRatio < 0.95) trendScore -= 15; // 5日/20日均量比<0.95倍，成交量低迷，惩罚15分
 
   trendScore = Math.min(Math.round(trendScore * oneSidedPenalty), 100);
 
@@ -504,6 +510,7 @@ export function performTechnicalAnalysis(klines: KLineData[], stockCode?: string
     priceAboveMA5,
     volume5DayAvg: volumeTrend.avg5Day,
     volume10DayAvg: volumeTrend.avg10Day,
+    volume20DayAvg: volumeTrend.avg20Day,
     volumeIncreasing: volumeTrend.isIncreasing,
     priceVolumeCorrelation,
     trendScore,
