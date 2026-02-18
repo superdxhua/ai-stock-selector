@@ -377,10 +377,6 @@ export function selectStocks(strategy: string): Stock[] {
   let selected: Stock[] = [];
 
   switch (strategy) {
-    case "large-cap":
-      // 大盘股：市值 > 5000亿
-      selected = stockList.filter((s) => s.marketCap > 5000000000000);
-      break;
     case "5day-trend":
       // 5日趋势核心
       selected = stockList
