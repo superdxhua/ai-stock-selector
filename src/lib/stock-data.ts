@@ -3,6 +3,7 @@
 export interface Stock {
   code: string;
   name: string;
+  sector: string; // 所属板块
   price: number;
   change: number;
   changePercent: number;
@@ -11,6 +12,7 @@ export interface Stock {
   // 新增：策略评分
   trendScore?: number;
   volumeScore?: number;
+  leaderScore?: number; // 龙头精选评分
 }
 
 export interface KLineData {
@@ -44,6 +46,7 @@ export const stockList: Stock[] = [
   {
     code: "000001",
     name: "平安银行",
+    sector: "银行",
     price: 12.45,
     change: 0.23,
     changePercent: 1.88,
@@ -53,6 +56,7 @@ export const stockList: Stock[] = [
   {
     code: "000002",
     name: "万科A",
+    sector: "房地产",
     price: 18.67,
     change: -0.15,
     changePercent: -0.80,
@@ -62,6 +66,7 @@ export const stockList: Stock[] = [
   {
     code: "600519",
     name: "贵州茅台",
+    sector: "白酒",
     price: 1689.50,
     change: 12.30,
     changePercent: 0.73,
@@ -71,6 +76,7 @@ export const stockList: Stock[] = [
   {
     code: "600036",
     name: "招商银行",
+    sector: "银行",
     price: 35.78,
     change: 0.85,
     changePercent: 2.43,
@@ -80,6 +86,7 @@ export const stockList: Stock[] = [
   {
     code: "000858",
     name: "五粮液",
+    sector: "白酒",
     price: 185.32,
     change: 3.25,
     changePercent: 1.78,
@@ -89,6 +96,7 @@ export const stockList: Stock[] = [
   {
     code: "600276",
     name: "恒瑞医药",
+    sector: "医药",
     price: 52.18,
     change: 1.45,
     changePercent: 2.85,
@@ -98,6 +106,7 @@ export const stockList: Stock[] = [
   {
     code: "002594",
     name: "比亚迪",
+    sector: "新能源",
     price: 256.78,
     change: 8.92,
     changePercent: 3.60,
@@ -107,6 +116,7 @@ export const stockList: Stock[] = [
   {
     code: "601318",
     name: "中国平安",
+    sector: "保险",
     price: 48.56,
     change: 1.23,
     changePercent: 2.60,
@@ -116,6 +126,7 @@ export const stockList: Stock[] = [
   {
     code: "000725",
     name: "京东方A",
+    sector: "电子",
     price: 4.28,
     change: 0.35,
     changePercent: 8.90,
@@ -125,6 +136,7 @@ export const stockList: Stock[] = [
   {
     code: "300750",
     name: "宁德时代",
+    sector: "新能源",
     price: 185.50,
     change: 15.20,
     changePercent: 8.93,
@@ -415,6 +427,76 @@ export function calculate5DayVolumeScore(kline: KLineData[], stockPrice: number)
   return Math.min(100, score);
 }
 
+/**
+ * 计算龙头精选评分
+ * 综合考虑板块龙头、成交量堆积、人气爆棚、量价齐升
+ * @param stock 当前股票
+ * @param allStocks 所有股票（用于计算板块排名）
+ * @param kline K线数据
+ */
+export function calculateLeaderScore(stock: Stock, allStocks: Stock[], kline: KLineData[]): number {
+  const recent5 = kline.slice(-5);
+  if (recent5.length < 5) return 0;
+
+  // 必选条件：5日内至少有一个涨停板
+  if (!hasLimitUpIn5Days(kline)) {
+    return 0;
+  }
+
+  let score = 0;
+
+  // 1. 板块龙头（权重30）
+  const sectorStocks = allStocks.filter((s) => s.sector === stock.sector);
+  if (sectorStocks.length > 0) {
+    // 按涨跌幅排名
+    const sortByChange = [...sectorStocks].sort((a, b) => b.changePercent - a.changePercent);
+    const changeRank = sortByChange.findIndex((s) => s.code === stock.code);
+    // 按成交量排名
+    const sortByVolume = [...sectorStocks].sort((a, b) => b.volume - a.volume);
+    const volumeRank = sortByVolume.findIndex((s) => s.code === stock.code);
+
+    // 板块龙头得分（前30%得满分）
+    const top30Percent = Math.ceil(sectorStocks.length * 0.3);
+    const rankScore = Math.min(15, (top30Percent - changeRank) * 5) + 
+                      Math.min(15, (top30Percent - volumeRank) * 5);
+    score += Math.max(0, rankScore);
+  }
+
+  // 2. 成交量堆积（权重25）
+  const recentVolumes = recent5.map((d) => d.volume);
+  const volumeIncreasingDays = recentVolumes.filter((v, i) => {
+    if (i === 0) return false;
+    return v > recentVolumes[i - 1];
+  }).length;
+  if (volumeIncreasingDays >= 4) score += 25;
+  else if (volumeIncreasingDays >= 3) score += 20;
+  else if (volumeIncreasingDays >= 2) score += 15;
+
+  // 3. 人气爆棚（权重25）
+  // 连续涨停或大涨天数
+  const bigRallyDays = recent5.filter((d) => d.changePercent >= 7).length;
+  const consecutiveUpDays = recent5.filter((d) => d.changePercent > 0).length;
+  if (bigRallyDays >= 2) score += 25;
+  else if (bigRallyDays >= 1 && consecutiveUpDays >= 4) score += 20;
+  else if (consecutiveUpDays >= 5) score += 18;
+  else if (consecutiveUpDays >= 4) score += 15;
+
+  // 4. 量价齐升（权重20）
+  let priceVolumeMatchDays = 0;
+  for (let i = 1; i < recent5.length; i++) {
+    const priceUp = recent5[i].close > recent5[i].open;
+    const volumeUp = recent5[i].volume > recent5[i - 1].volume;
+    if (priceUp && volumeUp) {
+      priceVolumeMatchDays++;
+    }
+  }
+  if (priceVolumeMatchDays >= 4) score += 20;
+  else if (priceVolumeMatchDays >= 3) score += 18;
+  else if (priceVolumeMatchDays >= 2) score += 15;
+
+  return Math.min(100, score);
+}
+
 // 获取股票详情
 export function getStockDetail(code: string): StockDetail | null {
   const stock = stockList.find((s) => s.code === code);
@@ -474,6 +556,22 @@ export function selectStocks(strategy: string): Stock[] {
         })
         .filter((s) => s.volumeScore && s.volumeScore >= 50)
         .sort((a, b) => (b.volumeScore || 0) - (a.volumeScore || 0));
+      break;
+    case "leader":
+      // 龙头精选：每天筛选出3只最优质的龙头股票
+      selected = stockList
+        .map((stock) => {
+          const kline = generateKLineData(
+            stock.price,
+            30,
+            stock.changePercent > 1 ? "up" : "neutral"
+          );
+          const score = calculateLeaderScore(stock, stockList, kline);
+          return { ...stock, leaderScore: score };
+        })
+        .filter((s) => s.leaderScore && s.leaderScore >= 50)
+        .sort((a, b) => (b.leaderScore || 0) - (a.leaderScore || 0))
+        .slice(0, 3); // 只保留前3只
       break;
     default:
       selected = stockList;

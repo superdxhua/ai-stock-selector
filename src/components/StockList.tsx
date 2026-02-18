@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3, Crown } from "lucide-react";
 import Link from "next/link";
 import StrategyCalendar from "./StrategyCalendar";
 import ConsecutiveStocks from "./ConsecutiveStocks";
@@ -13,6 +13,7 @@ import ConsecutiveStocks from "./ConsecutiveStocks";
 interface Stock {
   code: string;
   name: string;
+  sector: string;
   price: number;
   change: number;
   changePercent: number;
@@ -20,12 +21,14 @@ interface Stock {
   marketCap: number;
   trendScore?: number;
   volumeScore?: number;
+  leaderScore?: number;
 }
 
 const strategies = [
   { id: "all", name: "全部股票", description: "查看所有股票" },
   { id: "5day-trend", name: "5日趋势核心", description: "短期强势上涨股（评分≥50）" },
   { id: "5day-volume", name: "5日容量核心", description: "成交量活跃股（评分≥50）" },
+  { id: "leader", name: "龙头精选", description: "每天精选3只最优质龙头（评分≥50）" },
 ];
 
 export default function StockList() {
@@ -95,7 +98,7 @@ export default function StockList() {
   };
 
   const currentStrategy = strategies.find((s) => s.id === selectedStrategy);
-  const showScore = selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume";
+  const showScore = selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume" || selectedStrategy === "leader";
 
   return (
     <div className="flex flex-col gap-4">
@@ -114,6 +117,7 @@ export default function StockList() {
             <div className="flex items-center gap-2 mb-1">
               {strategy.id === "5day-trend" && <TrendingUp className="w-4 h-4 text-blue-600" />}
               {strategy.id === "5day-volume" && <BarChart3 className="w-4 h-4 text-purple-600" />}
+              {strategy.id === "leader" && <Crown className="w-4 h-4 text-yellow-600" />}
               <h3 className="font-semibold text-sm">{strategy.name}</h3>
             </div>
             <p className="text-xs text-muted-foreground">{strategy.description}</p>
@@ -206,13 +210,17 @@ export default function StockList() {
                     {showScore && (
                       <TableCell className="text-right">
                         <Badge className={getScoreColor(
-                          selectedStrategy === "5day-trend" ? stock.trendScore : stock.volumeScore
+                          selectedStrategy === "5day-trend" ? stock.trendScore :
+                          selectedStrategy === "5day-volume" ? stock.volumeScore :
+                          stock.leaderScore
                         )}>
                           <span className="flex items-center gap-1">
                             <Flame className="w-3 h-3" />
                             {selectedStrategy === "5day-trend"
                               ? (stock.trendScore || 0)
-                              : (stock.volumeScore || 0)}
+                              : selectedStrategy === "5day-volume"
+                              ? (stock.volumeScore || 0)
+                              : (stock.leaderScore || 0)}
                           </span>
                         </Badge>
                       </TableCell>
@@ -257,7 +265,20 @@ export default function StockList() {
             <p><strong>评分规则：</strong>均量倍数(35分) + 换手率(25分) + 成交量递增(20分) + 量价配合(20分)</p>
           </div>
         )}
-        {selectedStrategy !== "5day-trend" && selectedStrategy !== "5day-volume" && (
+        {selectedStrategy === "leader" && (
+          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+            <p><strong>👑 龙头精选 - 每天只选3只最优质龙头</strong></p>
+            <p><strong>筛选条件：</strong></p>
+            <p>• <strong>5日内至少有一个涨停板（必选）</strong></p>
+            <p>• 板块龙头：涨跌幅和成交量在板块中排名前列</p>
+            <p>• 成交量堆积：连续放量</p>
+            <p>• 人气爆棚：连续大涨或涨停天数多</p>
+            <p>• 量价齐升：价格上涨且成交量增加</p>
+            <p><strong>评分规则：</strong>板块龙头(30分) + 成交量堆积(25分) + 人气爆棚(25分) + 量价齐升(20分)</p>
+            <p className="text-xs text-yellow-700 dark:text-yellow-300">💡 每天仅筛选出3只综合评分最高的龙头股票，关注短期大幅上涨机会</p>
+          </div>
+        )}
+        {selectedStrategy !== "5day-trend" && selectedStrategy !== "5day-volume" && selectedStrategy !== "leader" && (
           <p className="text-sm text-blue-800 dark:text-blue-200">
             {currentStrategy?.description}
           </p>
@@ -265,7 +286,7 @@ export default function StockList() {
       </Card>
 
       {/* 日历和连续上榜（仅策略模式下显示） */}
-      {(selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume") && (
+      {(selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume" || selectedStrategy === "leader") && (
         <>
           <StrategyCalendar strategy={selectedStrategy} />
           <ConsecutiveStocks strategy={selectedStrategy} />
