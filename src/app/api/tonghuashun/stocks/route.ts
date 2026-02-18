@@ -100,9 +100,38 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // 获取股票实时数据
-    const stockList = await getStockList();
-    const stockData = stockList.find(s => s.f12 === code);
+    // 获取股票实时数据（不依赖策略池，直接从东方财富获取）
+    // 使用多页方式搜索股票
+    let stockData = null;
+    let page = 1;
+    const pageSize = 100;
+    let maxPages = 56; // 5507 / 100 ≈ 55，取56页
+
+    while (page <= maxPages && !stockData) {
+      const params = new URLSearchParams({
+        pn: page.toString(),
+        pz: pageSize.toString(),
+        po: "1",
+        np: "1",
+        fltt: "2",
+        invt: "2",
+        fid: "f12", // 按代码排序
+        fs: "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23",
+        fields: "f12,f14,f2,f3",
+      });
+
+      const stockListResponse = await fetch(`https://push2.eastmoney.com/api/qt/clist/get?${params}`);
+      const stockListData = await stockListResponse.json();
+
+      if (stockListData && stockListData.data && stockListData.data.diff) {
+        stockData = stockListData.data.diff.find((s: any) => s.f12 === code);
+        if (stockData) {
+          break;
+        }
+      }
+
+      page++;
+    }
 
     if (!stockData) {
       return NextResponse.json({
@@ -111,7 +140,8 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    const formatted = formatStockData(stockData);
+    const price = stockData.f2 || 0;
+    const changePercent = stockData.f3 || 0;
 
     // 插入数据库
     const { data, error } = await client
@@ -122,8 +152,8 @@ export async function POST(request: NextRequest) {
         strategy_type: strategyType,
         reason,
         source,
-        price: formatted.price,
-        change_percent: formatted.changePercent,
+        price: price,
+        change_percent: changePercent,
       })
       .select()
       .single();

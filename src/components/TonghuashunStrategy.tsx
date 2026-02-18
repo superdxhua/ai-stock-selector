@@ -76,17 +76,14 @@ function StrategyPanel({
 
     setFetchingName(true);
     try {
-      // 调用获取股票列表的API
-      const response = await fetch("/api/stocks/real?strategy=5day-trend");
+      // 调用独立的股票信息API
+      const response = await fetch(`/api/stock/info?code=${code}`);
       const result = await response.json();
       
       if (result.success && result.data) {
-        const stock = result.data.find((s: any) => s.code === code);
-        if (stock) {
-          setFormData({ ...formData, code, name: stock.name });
-        } else {
-          setFormData({ ...formData, code, name: "" });
-        }
+        setFormData({ ...formData, code, name: result.data.name });
+      } else {
+        setFormData({ ...formData, code, name: "" });
       }
     } catch (error) {
       console.error("获取股票名称失败:", error);
@@ -292,7 +289,7 @@ function StrategyPanel({
           {!showAddForm && (
             <div className="flex gap-2">
               <Input
-                placeholder="输入股票代码（如：603466）自动获取名称..."
+                placeholder="输入6位股票代码（如：603466）自动获取名称，可添加任意股票..."
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' && formData.code) {
                     setShowAddForm(true);
@@ -444,10 +441,10 @@ export default function TonghuashunStrategy() {
       {/* 标题 */}
       <div>
         <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">
-          🌸 同花顺策略
+          🌸 同花顺策略管理
         </h2>
         <p className="text-slate-600 dark:text-slate-400 mt-1">
-          管理同花顺策略股票，逆向分析优化自身策略
+          手动添加同花顺策略股票，支持任意股票，通过逆向分析优化自身选股策略
         </p>
       </div>
 
@@ -455,8 +452,8 @@ export default function TonghuashunStrategy() {
       <div className="space-y-6">
         <StrategyPanel
           strategyType="5day-trend"
-          title="5日趋势核心"
-          description="重点关注连续上涨、均线多头排列的股票"
+          title="5日趋势核心策略池"
+          description="存储同花顺5日趋势策略的股票，可手动添加任意股票进行分析"
           icon={<TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
           gradientClass="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950"
           borderClass="border-blue-200 dark:border-blue-800"
@@ -464,8 +461,8 @@ export default function TonghuashunStrategy() {
 
         <StrategyPanel
           strategyType="5day-volume"
-          title="5日容量核心"
-          description="重点关注成交量放大、换手率活跃的股票"
+          title="5日容量核心策略池"
+          description="存储同花顺5日容量策略的股票，可手动添加任意股票进行分析"
           icon={<BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />}
           gradientClass="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950"
           borderClass="border-purple-200 dark:border-purple-800"
