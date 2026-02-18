@@ -4,9 +4,9 @@ import { useState } from "react";
 import ChatInterface from "@/components/ChatInterface";
 import StockList from "@/components/StockList";
 import BullStockAnalysis from "@/components/BullStockAnalysis";
-import TaskSchedulerMonitor from "@/components/TaskSchedulerMonitor";
 import StockTrackingManager from "@/components/StockTrackingManager";
 import ExperienceLibrary from "@/components/ExperienceLibrary";
+import AutoTaskMonitor from "@/components/AutoTaskMonitor";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"chat" | "stocks" | "bull" | "scheduler" | "tracking" | "experience">("chat");
@@ -75,11 +75,11 @@ export default function Home() {
                 onClick={() => setActiveTab("scheduler")}
                 className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
                   activeTab === "scheduler"
-                    ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                 }`}
               >
-                ⏰ 任务
+                🤖 自动任务
               </button>
             </nav>
           </div>
@@ -93,7 +93,7 @@ export default function Home() {
         {activeTab === "bull" && <BullStockAnalysis />}
         {activeTab === "tracking" && <StockTrackingManager />}
         {activeTab === "experience" && <ExperienceLibrary />}
-        {activeTab === "scheduler" && <TaskSchedulerMonitor />}
+        {activeTab === "scheduler" && <AutoTaskMonitor />}
       </main>
     </div>
   );
