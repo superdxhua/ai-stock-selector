@@ -30,7 +30,7 @@ export interface StockDetail extends Stock {
     ma10: number[];
     ma20: number[];
     cyc5: number[];  // 5日成本均线
-    cyc13: number[]; // 13日成本均线
+    cyc21: number[]; // 21日成本均线
     cyc34: number[]; // 34日成本均线
     macd: { dif: number; dea: number; bar: number };
     kdj: { k: number; d: number; j: number };
@@ -280,7 +280,7 @@ function calculateIndicators(kline: KLineData[]) {
 
   // CYC成本均线
   const cyc5 = calculateCYC(kline, 5);
-  const cyc13 = calculateCYC(kline, 13);
+  const cyc21 = calculateCYC(kline, 21);
   const cyc34 = calculateCYC(kline, 34);
 
   return {
@@ -288,7 +288,7 @@ function calculateIndicators(kline: KLineData[]) {
     ma10,
     ma20,
     cyc5,
-    cyc13,
+    cyc21,
     cyc34,
     macd: { dif, dea, bar },
     kdj: { k, d, j },

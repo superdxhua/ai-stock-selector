@@ -31,7 +31,7 @@ interface StockDetail {
     ma10: number[];
     ma20: number[];
     cyc5: number[];
-    cyc13: number[];
+    cyc21: number[];
     cyc34: number[];
     macd: { dif: number; dea: number; bar: number };
     kdj: { k: number; d: number; j: number };
@@ -349,11 +349,11 @@ export default function StockDetailPage() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">CYC13 (13日成本)</span>
+                  <span className="text-muted-foreground">CYC21 (21日成本)</span>
                   <span className="font-mono font-medium">
-                    {stock.indicators.cyc13 && stock.indicators.cyc13[stock.indicators.cyc13.length - 1]
-                      ? stock.indicators.cyc13[
-                          stock.indicators.cyc13.length - 1
+                    {stock.indicators.cyc21 && stock.indicators.cyc21[stock.indicators.cyc21.length - 1]
+                      ? stock.indicators.cyc21[
+                          stock.indicators.cyc21.length - 1
                         ].toFixed(2)
                       : "-"}
                   </span>

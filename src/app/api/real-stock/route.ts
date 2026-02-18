@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     // 计算CYC指标
     const cyc5 = calculateCYC(standardKLine, 5);
-    const cyc13 = calculateCYC(standardKLine, 13);
+    const cyc21 = calculateCYC(standardKLine, 21);
     const cyc34 = calculateCYC(standardKLine, 34);
 
     // 计算MA指标
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         kline: standardKLine,
         indicators: {
           cyc5,
-          cyc13,
+          cyc21,
           cyc34,
           ma5,
           ma10,
