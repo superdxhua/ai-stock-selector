@@ -200,9 +200,9 @@ export async function filterHotSectorStocks(
           f17: hotSectorStock.f17 || stock.f17,
         };
 
-        // 检查市值过滤
-        const marketCap = mergedStock.f20 || 0;
-        if (marketCap > 700000000000) {
+        // 检查市值过滤：40亿-700亿元
+        const marketCap = Number(mergedStock.f20) || 0;
+        if (marketCap > 70000000000) {
           console.log(`  排除 ${stock.f12} ${stock.f14}: 市值=${(marketCap / 100000000).toFixed(2)}亿元 > 700亿元（热点板块）`);
           continue;
         }

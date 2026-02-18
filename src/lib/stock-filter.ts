@@ -52,14 +52,14 @@ export function filterStocks(stocks: any[]): any[] {
 
     // 排除市值700亿元以上的股票
     // f20字段是总市值，单位：元
-    const marketCap = stock.f20 || stock.marketCap;
-    if (marketCap && marketCap > 700000000000) {
+    const marketCap = Number(stock.f20) || 0;
+    if (marketCap > 70000000000) {
       console.log(`  排除 ${code} ${name}: 市值=${(marketCap / 100000000).toFixed(2)}亿元 > 700亿元`);
       return false;
     }
 
     // 排除市值40亿元以下的股票
-    if (marketCap && marketCap < 4000000000) {
+    if (marketCap < 4000000000) {
       console.log(`  排除 ${code} ${name}: 市值=${(marketCap / 100000000).toFixed(2)}亿元 < 40亿元`);
       return false;
     }
