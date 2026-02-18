@@ -77,7 +77,15 @@ export async function GET(request: NextRequest) {
 
     console.log(`获取到 ${stockList.length} 只股票（含科创板和ST）`);
 
+    // 调试：打印前5只股票的市值
+    console.log(`市值样本（前5只）：`);
+    stockList.slice(0, 5).forEach(stock => {
+      const marketCap = stock.f20 || 0;
+      console.log(`  ${stock.f12} ${stock.f14}: f20=${marketCap}, 市值=${(marketCap / 100000000).toFixed(2)}亿元`);
+    });
+
     // 过滤科创板和ST股票
+    console.log(`开始过滤股票...`);
     stockList = filterStocks(stockList);
     console.log(`过滤后剩余 ${stockList.length} 只股票（已排除科创板和ST）`);
 

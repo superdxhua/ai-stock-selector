@@ -107,7 +107,7 @@ export async function getHotSectors(limit: number = 20): Promise<SectorInfo[]> {
 /**
  * 获取板块内的股票列表
  */
-export async function getSectorStocks(sectorCode: string): Promise<string[]> {
+export async function getSectorStocks(sectorCode: string): Promise<any[]> {
   try {
     // 使用不同的API端点获取板块股票
     const params = new URLSearchParams({
@@ -119,7 +119,7 @@ export async function getSectorStocks(sectorCode: string): Promise<string[]> {
       invt: "2",
       fid: "f3",
       fs: `b:${sectorCode}+f:!50`, // 从指定板块获取股票，排除50和60开头的
-      fields: "f12,f14,f3",
+      fields: "f12,f14,f3,f4,f20,f17,f21", // 包含代码、名称、涨跌幅、价格、市值、成交额
     });
 
     const response = await fetch(`${SECTOR_API.sectorList}?${params}`, {
@@ -136,11 +136,9 @@ export async function getSectorStocks(sectorCode: string): Promise<string[]> {
     const result = await response.json();
     const data = result.data?.diff || [];
 
-    // 提取股票代码
-    const stockCodes = data.map((item: any) => item.f12);
-    console.log(`板块 ${sectorCode} 包含 ${stockCodes.length} 只股票`);
+    console.log(`板块 ${sectorCode} 包含 ${data.length} 只股票`);
 
-    return stockCodes;
+    return data;
   } catch (error) {
     console.error(`获取板块 ${sectorCode} 股票列表失败:`, error);
     return [];
@@ -148,7 +146,7 @@ export async function getSectorStocks(sectorCode: string): Promise<string[]> {
 }
 
 /**
- * 获取所有热点板块内的股票代码（去重）
+ * 获取所有热点板块内的股票（去重）
  */
 export async function getHotSectorStocks(hotSectorLimit: number = 20): Promise<Set<string>> {
   try {
@@ -156,8 +154,8 @@ export async function getHotSectorStocks(hotSectorLimit: number = 20): Promise<S
     const stockCodes = new Set<string>();
 
     for (const sector of hotSectors) {
-      const codes = await getSectorStocks(sector.f12);
-      codes.forEach(code => stockCodes.add(code));
+      const stocks = await getSectorStocks(sector.f12);
+      stocks.forEach((stock: any) => stockCodes.add(stock.f12));
     }
 
     console.log(`共获取到 ${stockCodes.size} 只热点板块股票`);
@@ -176,11 +174,46 @@ export async function filterHotSectorStocks(
   hotSectorLimit: number = 20
 ): Promise<any[]> {
   try {
-    const hotSectorStockCodes = await getHotSectorStocks(hotSectorLimit);
+    const hotSectors = await getHotSectors(hotSectorLimit);
+    const hotSectorStocks = new Map<string, any>(); // 使用 Map 存储完整的股票信息
 
-    const filteredStocks = stocks.filter(stock =>
-      hotSectorStockCodes.has(stock.f12)
-    );
+    // 获取所有热点板块的股票
+    for (const sector of hotSectors) {
+      const sectorStocks = await getSectorStocks(sector.f12);
+      sectorStocks.forEach((stock: any) => {
+        hotSectorStocks.set(stock.f12, stock);
+      });
+    }
+
+    console.log(`共获取到 ${hotSectorStocks.size} 只热点板块股票（含完整信息）`);
+
+    // 筛选热点板块内的股票，并使用热点板块的完整信息
+    const filteredStocks: any[] = [];
+    for (const stock of stocks) {
+      const hotSectorStock = hotSectorStocks.get(stock.f12);
+      if (hotSectorStock) {
+        // 合并原始股票信息和热点板块股票信息
+        // 优先使用热点板块股票的市值等字段
+        const mergedStock = {
+          ...stock,
+          f20: hotSectorStock.f20 || stock.f20,
+          f17: hotSectorStock.f17 || stock.f17,
+        };
+
+        // 检查市值过滤
+        const marketCap = mergedStock.f20 || 0;
+        if (marketCap > 700000000000) {
+          console.log(`  排除 ${stock.f12} ${stock.f14}: 市值=${(marketCap / 100000000).toFixed(2)}亿元 > 700亿元（热点板块）`);
+          continue;
+        }
+        if (marketCap < 4000000000) {
+          console.log(`  排除 ${stock.f12} ${stock.f14}: 市值=${(marketCap / 100000000).toFixed(2)}亿元 < 40亿元（热点板块）`);
+          continue;
+        }
+
+        filteredStocks.push(mergedStock);
+      }
+    }
 
     console.log(
       `从 ${stocks.length} 只股票中筛选出 ${filteredStocks.length} 只热点板块股票`
