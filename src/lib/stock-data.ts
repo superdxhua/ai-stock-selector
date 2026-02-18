@@ -221,7 +221,7 @@ export function formatStockData(stock: StockBasicInfo) {
     changePercent: changePercent,
     volume: Math.round((stock.f5 || 0) * 100), // 成交量（股）= 成交量（手）* 100
     marketCap: stock.f21 || stock.f20, // f21流通市值（元），如果没有则使用f20总市值
-    amount: (stock.f6 || 0) / 10000, // 成交额（万元）
+    amount: (stock.f6 || 0) / 100000000, // 成交额（亿元）
     turnoverRate: stock.f18, // 换手率
     high: stock.f9,
     low: stock.f10,

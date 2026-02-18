@@ -415,7 +415,7 @@ export default function StockList() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
-                      {stock.amount ? `${stock.amount.toFixed(2)}万` : formatNumber(stock.volume)}
+                      {stock.amount ? `${stock.amount.toFixed(2)}亿` : formatNumber(stock.volume)}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
                       {formatNumber(stock.marketCap)}
