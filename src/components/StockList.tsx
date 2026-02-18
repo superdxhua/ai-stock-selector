@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3, Crown } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3, Crown, Sparkles } from "lucide-react";
 import Link from "next/link";
 import StrategyCalendar from "./StrategyCalendar";
 import ConsecutiveStocks from "./ConsecutiveStocks";
@@ -36,9 +36,6 @@ export default function StockList() {
   const [isLoading, setIsLoading] = useState(false);
 
   // 生成模拟股票数据
-  // ====== 模拟数据生成函数 ======
-  // 注意：此函数仅用于离线测试或开发调试
-  // 生产环境默认使用东方财富真实数据源
   const generateMockStocks = (strategy: string): Stock[] => {
     const stockNames = [
       { code: "600519", name: "贵州茅台", sector: "白酒" },
@@ -102,9 +99,7 @@ export default function StockList() {
   const fetchStocks = async (strategy: string) => {
     setIsLoading(true);
     try {
-      // 使用东方财富真实数据API（策略筛选）
       const url = `/api/stocks/real?strategy=${strategy}`;
-
       const response = await fetch(url);
       const result = await response.json();
 
@@ -112,7 +107,6 @@ export default function StockList() {
         setStocks(result.data);
         console.log(`获取到 ${result.data?.length || 0} 只股票数据（来自东方财富）`);
 
-        // 自动保存历史记录
         if (result.data && result.data.length > 0) {
           saveHistory(strategy, result.data);
         }
@@ -130,7 +124,6 @@ export default function StockList() {
     }
   };
 
-  // 保存历史记录
   const saveHistory = async (strategy: string, stocks: any[]) => {
     try {
       await fetch("/api/strategy-history", {
@@ -172,44 +165,43 @@ export default function StockList() {
   const showScore = selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume" || selectedStrategy === "leader";
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* 策略选择 */}
+    <div className="space-y-6">
+      {/* 策略选择卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {strategies.map((strategy) => {
           const isSelected = selectedStrategy === strategy.id;
           
-          // 定义每个策略的主题色和样式
           const strategyConfig = {
             '5day-trend': {
               icon: <TrendingUp className="w-8 h-8" />,
-              color: 'from-blue-500 to-cyan-500',
+              color: 'from-blue-500 via-cyan-500 to-teal-500',
               textColor: 'text-blue-600',
-              bgColor: 'bg-blue-50 dark:bg-blue-950/30',
-              borderColor: 'border-blue-500',
-              ringColor: 'ring-blue-500',
-              badgeColor: 'bg-blue-100 text-blue-700',
+              bgColor: 'bg-gradient-to-br from-blue-50/80 via-cyan-50/80 to-teal-50/80 dark:from-blue-950/40 dark:via-cyan-950/40 dark:to-teal-950/40',
+              borderColor: 'border-blue-500/50',
+              ringColor: 'ring-blue-500/50',
+              badgeColor: 'bg-blue-100/90 text-blue-700 border-blue-500/30',
               description: '短期强势上涨股',
               scoreText: '趋势评分'
             },
             '5day-volume': {
               icon: <BarChart3 className="w-8 h-8" />,
-              color: 'from-purple-500 to-pink-500',
+              color: 'from-purple-500 via-pink-500 to-rose-500',
               textColor: 'text-purple-600',
-              bgColor: 'bg-purple-50 dark:bg-purple-950/30',
-              borderColor: 'border-purple-500',
-              ringColor: 'ring-purple-500',
-              badgeColor: 'bg-purple-100 text-purple-700',
+              bgColor: 'bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-rose-50/80 dark:from-purple-950/40 dark:via-pink-950/40 dark:to-rose-950/40',
+              borderColor: 'border-purple-500/50',
+              ringColor: 'ring-purple-500/50',
+              badgeColor: 'bg-purple-100/90 text-purple-700 border-purple-500/30',
               description: '成交量活跃股',
               scoreText: '容量评分'
             },
             'leader': {
               icon: <Crown className="w-8 h-8" />,
-              color: 'from-yellow-500 to-orange-500',
-              textColor: 'text-yellow-600',
-              bgColor: 'bg-yellow-50 dark:bg-yellow-950/30',
-              borderColor: 'border-yellow-500',
-              ringColor: 'ring-yellow-500',
-              badgeColor: 'bg-yellow-100 text-yellow-700',
+              color: 'from-amber-500 via-orange-500 to-red-500',
+              textColor: 'text-amber-600',
+              bgColor: 'bg-gradient-to-br from-amber-50/80 via-orange-50/80 to-red-50/80 dark:from-amber-950/40 dark:via-orange-950/40 dark:to-red-950/40',
+              borderColor: 'border-amber-500/50',
+              ringColor: 'ring-amber-500/50',
+              badgeColor: 'bg-amber-100/90 text-amber-700 border-amber-500/30',
               description: '每天精选3只龙头',
               scoreText: '龙头评分'
             }
@@ -222,36 +214,35 @@ export default function StockList() {
               key={strategy.id}
               onClick={() => setSelectedStrategy(strategy.id)}
               className={`
-                relative overflow-hidden cursor-pointer transition-all duration-300
-                hover:shadow-2xl hover:-translate-y-1
+                relative overflow-hidden cursor-pointer transition-all duration-500
+                hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02]
                 ${isSelected 
-                  ? `ring-4 ${config.ringColor} ${config.bgColor} border-2 ${config.borderColor}` 
-                  : 'border-2 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                  ? `ring-4 ${config.ringColor} ${config.bgColor} border-2 ${config.borderColor} shadow-xl` 
+                  : 'border-2 border-slate-200/50 hover:border-slate-300 dark:border-slate-700/50 dark:hover:border-slate-600'
                 }
               `}
             >
-              {/* 背景渐变装饰 */}
-              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${config.color} opacity-10 rounded-bl-full`} />
+              {/* 动态背景装饰 */}
+              <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-br ${config.color} opacity-5 rounded-bl-full transition-opacity duration-500 ${isSelected ? 'opacity-10' : 'opacity-5'}`} />
+              <div className={`absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr ${config.color} opacity-5 rounded-tr-full transition-opacity duration-500 ${isSelected ? 'opacity-10' : 'opacity-5'}`} />
               
               <div className="relative p-6">
                 {/* 图标和标题 */}
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`${config.textColor} p-3 rounded-xl bg-white dark:bg-slate-800 shadow-sm`}>
+                  <div className={`${config.textColor} p-4 rounded-2xl bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg ${isSelected ? `ring-2 ${config.ringColor}` : ''}`}>
                     {config.icon}
                   </div>
                   {isSelected && (
-                    <Badge className={`shrink-0 ${config.badgeColor}`}>
-                      <span className="flex items-center gap-1">
-                        <Flame className="w-3 h-3" />
-                        已选择
-                      </span>
+                    <Badge className={`shrink-0 border ${config.badgeColor} shadow-md`}>
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      已选择
                     </Badge>
                   )}
                 </div>
 
                 {/* 标题和描述 */}
                 <div className="mb-4">
-                  <h3 className={`text-lg font-bold mb-2 ${isSelected ? config.textColor : 'text-slate-800 dark:text-slate-100'}`}>
+                  <h3 className={`text-xl font-bold mb-2 ${isSelected ? config.textColor : 'text-slate-800 dark:text-slate-100'}`}>
                     {strategy.name}
                   </h3>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -260,15 +251,15 @@ export default function StockList() {
                 </div>
 
                 {/* 底部信息 */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between pt-4 border-t border-slate-200/50 dark:border-slate-700/50">
                   <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
                       {config.scoreText}
                     </Badge>
                     <span>评分 ≥ 50</span>
                   </div>
                   {isSelected && (
-                    <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${config.color} animate-pulse`} />
+                    <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${config.color} animate-pulse shadow-lg`} />
                   )}
                 </div>
               </div>
@@ -278,30 +269,30 @@ export default function StockList() {
       </div>
 
       {/* 股票列表 */}
-      <Card className="overflow-hidden shadow-lg">
+      <Card className="overflow-hidden shadow-2xl border-slate-200 dark:border-slate-700">
         <div className="relative overflow-hidden">
-          {/* 顶部装饰渐变 */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-yellow-500" />
+          {/* 顶部动态装饰条 */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 via-pink-500 to-amber-500 animate-gradient bg-[length:200%_100%]" />
           
-          <div className="p-6 border-b bg-gradient-to-r from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-900">
+          <div className="p-6 border-b bg-gradient-to-br from-slate-50/50 via-white/50 to-slate-50/50 dark:from-slate-900/50 dark:via-slate-800/50 dark:to-slate-900/50 backdrop-blur-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 {/* 策略图标 */}
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${
-                  selectedStrategy === '5day-trend' ? 'from-blue-500 to-cyan-500' :
-                  selectedStrategy === '5day-volume' ? 'from-purple-500 to-pink-500' :
-                  'from-yellow-500 to-orange-500'
-                } flex items-center justify-center text-white shadow-lg`}>
-                  {selectedStrategy === '5day-trend' && <TrendingUp className="w-6 h-6" />}
-                  {selectedStrategy === '5day-volume' && <BarChart3 className="w-6 h-6" />}
-                  {selectedStrategy === 'leader' && <Crown className="w-6 h-6" />}
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br shadow-2xl flex items-center justify-center text-white transition-transform duration-300 ${
+                  selectedStrategy === '5day-trend' ? 'from-blue-500 via-cyan-500 to-teal-500 scale-105' :
+                  selectedStrategy === '5day-volume' ? 'from-purple-500 via-pink-500 to-rose-500 scale-105' :
+                  'from-amber-500 via-orange-500 to-red-500 scale-105'
+                }`}>
+                  {selectedStrategy === '5day-trend' && <TrendingUp className="w-7 h-7" />}
+                  {selectedStrategy === '5day-volume' && <BarChart3 className="w-7 h-7" />}
+                  {selectedStrategy === 'leader' && <Crown className="w-7 h-7" />}
                 </div>
                 
                 {/* 标题信息 */}
                 <div>
-                  <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     {currentStrategy?.name}
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs shadow-md">
                       {stocks.length} 只
                     </Badge>
                   </h2>
@@ -316,19 +307,17 @@ export default function StockList() {
               {/* 右侧徽章 */}
               <div className="flex items-center gap-2 flex-wrap">
                 {showScore && (
-                  <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-md">
-                    <span className="flex items-center gap-1">
-                      <Flame className="w-3 h-3" />
-                      按评分排序
-                    </span>
+                  <Badge className="bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 text-white border-0 shadow-lg">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    按评分排序
                   </Badge>
                 )}
-                <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-md">
+                <Badge className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white border-0 shadow-lg">
                   <span className="flex items-center gap-1">
                     ⚠️ 已过滤：科创板、北交所、ST、退市风险、停牌、特殊处理、市值40-700亿外、成交额30万以下
                   </span>
                 </Badge>
-                <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-md">
+                <Badge className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white border-0 shadow-lg">
                   <span className="flex items-center gap-1">
                     📡 东方财富实时数据
                   </span>
@@ -339,33 +328,34 @@ export default function StockList() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
+            <p className="text-slate-500 dark:text-slate-400">正在加载股票数据...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>代码</TableHead>
-                  <TableHead>名称</TableHead>
-                  <TableHead className="text-right">价格</TableHead>
-                  <TableHead className="text-right">涨跌额</TableHead>
-                  <TableHead className="text-right">涨跌幅</TableHead>
-                  <TableHead className="text-right">成交量</TableHead>
-                  <TableHead className="text-right">市值</TableHead>
+                <TableRow className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-700/50">
+                  <TableHead className="font-semibold">代码</TableHead>
+                  <TableHead className="font-semibold">名称</TableHead>
+                  <TableHead className="text-right font-semibold">价格</TableHead>
+                  <TableHead className="text-right font-semibold">涨跌额</TableHead>
+                  <TableHead className="text-right font-semibold">涨跌幅</TableHead>
+                  <TableHead className="text-right font-semibold">成交量</TableHead>
+                  <TableHead className="text-right font-semibold">市值</TableHead>
                   {showScore && (
-                    <TableHead className="text-right">评分</TableHead>
+                    <TableHead className="text-right font-semibold">评分</TableHead>
                   )}
-                  <TableHead className="text-right">操作</TableHead>
+                  <TableHead className="text-right font-semibold">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {stocks.map((stock) => (
-                  <TableRow key={stock.code}>
+                  <TableRow key={stock.code} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                     <TableCell className="font-mono text-sm">{stock.code}</TableCell>
                     <TableCell className="font-medium">{stock.name}</TableCell>
-                    <TableCell className="text-right font-mono">
+                    <TableCell className="text-right font-mono font-semibold">
                       {stock.price.toFixed(2)}
                     </TableCell>
                     <TableCell className="text-right font-mono">
@@ -390,8 +380,8 @@ export default function StockList() {
                         }
                         className={
                           stock.changePercent >= 0
-                            ? "bg-red-100 text-red-700 hover:bg-red-200"
-                            : "bg-green-100 text-green-700 hover:bg-green-200"
+                            ? "bg-gradient-to-r from-red-100 to-red-200 text-red-700 border-red-300 font-semibold"
+                            : "bg-gradient-to-r from-green-100 to-green-200 text-green-700 border-green-300 font-semibold"
                         }
                       >
                         {stock.changePercent >= 0 ? "+" : ""}
@@ -423,7 +413,7 @@ export default function StockList() {
                       </TableCell>
                     )}
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="outline" size="sm" asChild className="shadow-md hover:shadow-lg transition-shadow">
                         <Link href={`/stock/${stock.code}`}>详情</Link>
                       </Button>
                     </TableCell>
@@ -436,103 +426,69 @@ export default function StockList() {
       </Card>
 
       {/* 策略说明 */}
-      <Card className="overflow-hidden border-2 shadow-md">
-        <div className={`p-5 bg-gradient-to-r ${
-          selectedStrategy === '5day-trend' ? 'from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-l-4 border-blue-500' :
-          selectedStrategy === '5day-volume' ? 'from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-l-4 border-purple-500' :
-          'from-yellow-50 to-orange-50 dark:from-yellow-950/30 dark:to-orange-950/30 border-l-4 border-yellow-500'
+      <Card className="overflow-hidden border-2 shadow-xl backdrop-blur-sm">
+        <div className={`p-6 bg-gradient-to-r ${
+          selectedStrategy === '5day-trend' ? 'from-blue-50/80 via-cyan-50/80 to-teal-50/80 dark:from-blue-950/40 dark:via-cyan-950/40 dark:to-teal-950/40 border-l-4 border-blue-500' :
+          selectedStrategy === '5day-volume' ? 'from-purple-50/80 via-pink-50/80 to-rose-50/80 dark:from-purple-950/40 dark:via-pink-950/40 dark:to-rose-950/40 border-l-4 border-purple-500' :
+          'from-amber-50/80 via-orange-50/80 to-red-50/80 dark:from-amber-950/40 dark:via-orange-950/40 dark:to-red-950/40 border-l-4 border-amber-500'
         }`}>
-          <div className="flex items-start gap-3 mb-3">
-            <div className={`p-2 rounded-lg ${
-              selectedStrategy === '5day-trend' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600' :
-              selectedStrategy === '5day-volume' ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-600' :
-              'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600'
+          <div className="flex items-start gap-4 mb-4">
+            <div className={`p-3 rounded-xl backdrop-blur-sm ${
+              selectedStrategy === '5day-trend' ? 'bg-blue-100/90 dark:bg-blue-900/50 text-blue-600' :
+              selectedStrategy === '5day-volume' ? 'bg-purple-100/90 dark:bg-purple-900/50 text-purple-600' :
+              'bg-amber-100/90 dark:bg-amber-900/50 text-amber-600'
             }`}>
-              {selectedStrategy === '5day-trend' && <TrendingUp className="w-5 h-5" />}
-              {selectedStrategy === '5day-volume' && <BarChart3 className="w-5 h-5" />}
-              {selectedStrategy === 'leader' && <Crown className="w-5 h-5" />}
+              {selectedStrategy === '5day-trend' && <TrendingUp className="w-6 h-6" />}
+              {selectedStrategy === '5day-volume' && <BarChart3 className="w-6 h-6" />}
+              {selectedStrategy === 'leader' && <Crown className="w-6 h-6" />}
             </div>
             <div className="flex-1">
-              <h3 className={`text-lg font-bold mb-1 ${
-                selectedStrategy === '5day-trend' ? 'text-blue-800 dark:text-blue-200' :
-                selectedStrategy === '5day-volume' ? 'text-purple-800 dark:text-purple-200' :
-                'text-yellow-800 dark:text-yellow-200'
-              }`}>
-                {currentStrategy?.name}
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">
+                {selectedStrategy === '5day-trend' && '5日趋势核心策略说明'}
+                {selectedStrategy === '5day-volume' && '5日容量核心策略说明'}
+                {selectedStrategy === 'leader' && '龙头精选策略说明'}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                智能选股策略说明
+              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                {selectedStrategy === '5day-trend' && '该策略专注于捕捉短期强势上涨的股票，通过分析过去5个交易日的价格走势、成交量变化和技术指标，筛选出趋势评分≥50的潜力股。适合短线交易。'}
+                {selectedStrategy === '5day-volume' && '该策略专注于成交量活跃的股票，通过分析过去5个交易日的成交量、成交额和资金流向，筛选出容量评分≥50的活跃股。适合捕捉主力资金动向。'}
+                {selectedStrategy === 'leader' && '该策略从趋势和容量双池中优中选优，精选3只最优质的龙头股票。龙头股具有涨势强劲、成交活跃、市场认可度高的特点，适合稳健投资者。'}
               </p>
             </div>
           </div>
-
-          <div className="space-y-3">
-            {selectedStrategy === "5day-trend" && (
-              <div className="space-y-2 text-sm">
-                <div>
-                  <p className="font-semibold text-slate-800 dark:text-slate-100 mb-1">✨ 筛选条件</p>
-                  <ul className="space-y-1 text-slate-600 dark:text-slate-400 ml-4">
-                    <li>• <strong>5日内至少有一个涨停板（必选）</strong></li>
-                    <li>• 连续3天以上上涨</li>
-                    <li>• 5日涨幅 &gt; 3%</li>
-                    <li>• 价格在MA5上方</li>
-                    <li>• MACD金叉（DIF &gt; DEA）</li>
-                  </ul>
-                </div>
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                  <p className="font-semibold text-slate-800 dark:text-slate-100 mb-1">📊 评分规则</p>
-                  <p className="text-slate-600 dark:text-slate-400">连阳天数(30分) + 5日涨幅(25分) + 技术形态(25分) + MACD金叉(20分)</p>
-                </div>
-              </div>
-            )}
-            {selectedStrategy === "5day-volume" && (
-              <div className="space-y-2 text-sm">
-                <div>
-                  <p className="font-semibold text-slate-800 dark:text-slate-100 mb-1">✨ 筛选条件</p>
-                  <ul className="space-y-1 text-slate-600 dark:text-slate-400 ml-4">
-                    <li>• <strong>5日内至少有一个涨停板（必选）</strong></li>
-                    <li>• 5日均量 &gt; 10日均量的1.2倍</li>
-                    <li>• 换手率 &gt; 3%</li>
-                    <li>• 成交量递增趋势</li>
-                    <li>• 量价配合良好</li>
-                  </ul>
-                </div>
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                  <p className="font-semibold text-slate-800 dark:text-slate-100 mb-1">📊 评分规则</p>
-                  <p className="text-slate-600 dark:text-slate-400">均量倍数(35分) + 换手率(25分) + 成交量递增(20分) + 量价配合(20分)</p>
-                </div>
-              </div>
-            )}
-            {selectedStrategy === "leader" && (
-              <div className="space-y-2 text-sm">
-                <div>
-                  <p className="font-semibold text-slate-800 dark:text-slate-100 mb-1">✨ 筛选条件</p>
-                  <ul className="space-y-1 text-slate-600 dark:text-slate-400 ml-4">
-                    <li>• <strong>5日内至少有一个涨停板（必选）</strong></li>
-                    <li>• 板块龙头：涨跌幅和成交量在板块中排名前列</li>
-                    <li>• 成交量堆积：连续放量</li>
-                    <li>• 人气爆棚：连续大涨或涨停天数多</li>
-                    <li>• 量价齐升：价格上涨且成交量增加</li>
-                  </ul>
-                </div>
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                  <p className="font-semibold text-slate-800 dark:text-slate-100 mb-1">📊 评分规则</p>
-                  <p className="text-slate-600 dark:text-slate-400">板块龙头(30分) + 成交量堆积(25分) + 人气爆棚(25分) + 量价齐升(20分)</p>
-                </div>
-                <div className={`p-3 rounded-lg ${selectedStrategy === 'leader' ? 'bg-yellow-100 dark:bg-yellow-900/30' : ''}`}>
-                  <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-300">
-                    💡 每天仅筛选出3只综合评分最高的龙头股票，关注短期大幅上涨机会
-                  </p>
-                </div>
-              </div>
-            )}
+          
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
+              从热点板块筛选
+            </Badge>
+            <Badge variant="outline" className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
+              过滤ST和退市风险股
+            </Badge>
+            <Badge variant="outline" className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
+              市值40-700亿
+            </Badge>
+            <Badge variant="outline" className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
+              成交额≥30万
+            </Badge>
           </div>
         </div>
       </Card>
 
-      {/* 日历和连续上榜 */}
-      <StrategyCalendar strategy={selectedStrategy} />
-      <ConsecutiveStocks strategy={selectedStrategy} />
+      {/* 历史记录和连续涨停 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <StrategyCalendar strategy={selectedStrategy} />
+        <ConsecutiveStocks />
+      </div>
+
+      <style jsx>{`
+        @keyframes gradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animate-gradient {
+          animation: gradient 3s ease infinite;
+        }
+      `}</style>
     </div>
   );
 }
