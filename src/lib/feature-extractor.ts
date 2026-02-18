@@ -163,10 +163,23 @@ function extractTechnicalFeatures(klines: KLineData[]) {
  */
 function extractPatternFeatures(klines: KLineData[], currentPrice: number) {
   // 检查是否有涨停（涨幅>=9.9%）
-  const hasLimitUp = klines.slice(-5).some(k => (k.close - k.open) / k.open >= 0.099);
+  // 排除最新交易日，检查过去5个交易日
+  const hasLimitUp = klines.slice(-6, -1).some((k, i, arr) => {
+    const idx = klines.length - 6 + i + 1; // 实际索引
+    if (idx === 0) return false;
+    const prevClose = klines[idx - 1].close;
+    const changePercent = ((k.close - prevClose) / prevClose) * 100;
+    return changePercent >= 9.9;
+  });
 
-  // 计算近期涨停次数
-  const limitUpCount = klines.slice(-20).filter(k => (k.close - k.open) / k.open >= 0.099).length;
+  // 计算近期涨停次数（排除最新交易日）
+  const limitUpCount = klines.slice(-21, -1).filter((k, i, arr) => {
+    const idx = klines.length - 21 + i + 1; // 实际索引
+    if (idx === 0) return false;
+    const prevClose = klines[idx - 1].close;
+    const changePercent = ((k.close - prevClose) / prevClose) * 100;
+    return changePercent >= 9.9;
+  }).length;
 
   // 判断是否多头排列
   const ma5 = calculateMA(klines, 5);

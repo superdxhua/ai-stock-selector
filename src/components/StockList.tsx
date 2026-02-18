@@ -18,6 +18,7 @@ interface Stock {
   change: number;
   changePercent: number;
   volume: number;
+  amount?: number; // 成交额（万元）
   marketCap: number;
   trendScore?: number;
   volumeScore?: number;
@@ -351,7 +352,7 @@ export default function StockList() {
                   <TableHead className="text-right font-semibold">价格</TableHead>
                   <TableHead className="text-right font-semibold">涨跌额</TableHead>
                   <TableHead className="text-right font-semibold">涨跌幅</TableHead>
-                  <TableHead className="text-right font-semibold">成交量</TableHead>
+                  <TableHead className="text-right font-semibold">成交额</TableHead>
                   <TableHead className="text-right font-semibold">流通值</TableHead>
                   {showScore && selectedStrategy === "leader" && (
                     <TableHead className="text-right font-semibold">趋势评分</TableHead>
@@ -414,7 +415,7 @@ export default function StockList() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
-                      {formatNumber(stock.volume)}
+                      {stock.amount ? `${stock.amount.toFixed(2)}万` : formatNumber(stock.volume)}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
                       {formatNumber(stock.marketCap)}

@@ -248,15 +248,16 @@ export function checkIsOneSidedLimitUp(
 /**
  * 检查涨停（非一字板）
  * @param klines K线数据
- * @param days 检查天数，默认5天
+ * @param days 检查天数，默认5天（排除最新交易日，检查过去5个交易日）
  * @param limitUpRate 涨停阈值，默认9.9%
  */
 export function checkLimitUp(klines: KLineData[], days: number = 5, limitUpRate: number = 9.9): boolean {
-  if (klines.length < 2) return false;
+  if (klines.length < days + 1) return false; // 至少需要days+1天数据
 
-  const checkDays = Math.min(days, klines.length);
+  const checkDays = Math.min(days, klines.length - 1); // 排除最新交易日
 
-  for (let i = klines.length - 1; i >= klines.length - checkDays; i--) {
+  // 从倒数第2天开始检查（排除今天）
+  for (let i = klines.length - 2; i >= klines.length - 1 - checkDays; i--) {
     const prevClose = klines[i - 1].close;
     const changePercent = ((klines[i].close - prevClose) / prevClose) * 100;
 
