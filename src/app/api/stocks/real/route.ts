@@ -39,6 +39,9 @@ interface StockWithScore {
     macdGoldenCross: boolean;
     volumeIncreasing: boolean;
     priceVolumeCorrelation: number;
+    cyc5Day: number;
+    consecutiveDaysAboveCYC: number;
+    priceAboveCYC: boolean;
   };
 }
 
@@ -149,6 +152,9 @@ export async function GET(request: NextRequest) {
                   macdGoldenCross: analysis.macdGoldenCross,
                   volumeIncreasing: analysis.volumeIncreasing,
                   priceVolumeCorrelation: analysis.priceVolumeCorrelation,
+                  cyc5Day: analysis.cyc5Day,
+                  consecutiveDaysAboveCYC: analysis.consecutiveDaysAboveCYC,
+                  priceAboveCYC: analysis.priceAboveCYC,
                 };
 
                 console.log(`股票 ${stock.code} ${stock.name} 分析完成: 趋势=${analysis.trendScore}, 容量=${analysis.volumeScore}, 龙头=${analysis.leaderScore}${analysis.isOneSidedLimitUp ? ' [一字板]' : ''}`);

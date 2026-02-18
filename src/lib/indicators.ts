@@ -42,6 +42,76 @@ export function calculateEMA(data: number[], period: number): number[] {
 }
 
 /**
+ * 计算CYC成本均线（Cost Average Line）
+ * CYC指标表示市场平均持仓成本，使用加权移动平均计算
+ * @param klines K线数据
+ * @param period 周期，默认5日
+ */
+export function calculateCYC(klines: KLineData[], period: number = 5): number[] {
+  if (klines.length < period) {
+    return new Array(klines.length).fill(0);
+  }
+
+  const result: number[] = [];
+
+  for (let i = 0; i < klines.length; i++) {
+    if (i < period - 1) {
+      result.push(0);
+    } else {
+      // 使用成交额加权平均计算成本
+      let totalAmount = 0;
+      let totalVolume = 0;
+
+      for (let j = 0; j < period; j++) {
+        const idx = i - j;
+        // 成交额 = 成交量 × 收盘价
+        const amount = klines[idx].volume * klines[idx].close;
+        totalAmount += amount;
+        totalVolume += klines[idx].volume;
+      }
+
+      // 成本 = 总成交额 / 总成交量
+      const cyc = totalVolume > 0 ? totalAmount / totalVolume : 0;
+      result.push(cyc);
+    }
+  }
+  return result;
+}
+
+/**
+ * 检查连续N日收盘价高于CYC指标
+ * @param klines K线数据
+ * @param days 连续天数，默认5日
+ */
+export function checkPriceAboveCYC(klines: KLineData[], days: number = 5): {
+  count: number; // 连续天数
+  aboveCYC: boolean; // 是否连续N日高于CYC
+} {
+  if (klines.length < days) {
+    return { count: 0, aboveCYC: false };
+  }
+
+  const cycValues = calculateCYC(klines, 5);
+  let count = 0;
+
+  // 从最新一天开始往前检查
+  for (let i = klines.length - 1; i >= 0; i--) {
+    if (cycValues[i] === 0) break; // CYC值为0表示数据不足，停止检查
+
+    if (klines[i].close > cycValues[i]) {
+      count++;
+    } else {
+      break; // 一旦不满足条件，立即停止
+    }
+  }
+
+  return {
+    count,
+    aboveCYC: count >= days,
+  };
+}
+
+/**
  * 计算MACD
  * @param klines K线数据
  * @returns { dif, dea, macd } DIF、DEA、MACD柱状图
@@ -387,6 +457,11 @@ export interface TechnicalAnalysis {
   volumeIncreasing: boolean;
   priceVolumeCorrelation: number;
 
+  // CYC成本均线
+  cyc5Day: number;
+  consecutiveDaysAboveCYC: number;
+  priceAboveCYC: boolean;
+
   // 综合评分
   trendScore: number;
   volumeScore: number;
@@ -440,6 +515,13 @@ export function performTechnicalAnalysis(klines: KLineData[], stockCode?: string
   const priceVolumeCorrelation = calculatePriceVolumeCorrelation(klines);
   const volumeRatio = volumeTrend.avg20Day > 0 ? volumeTrend.avg5Day / volumeTrend.avg20Day : 0; // 5日/20日均量比
 
+  // CYC成本均线
+  const cycValues = calculateCYC(klines, 5);
+  const cyc5Day = cycValues[cycValues.length - 1] || 0;
+  const cycCheckResult = checkPriceAboveCYC(klines, 5);
+  const consecutiveDaysAboveCYC = cycCheckResult.count;
+  const priceAboveCYC = cycCheckResult.aboveCYC;
+
   // 计算5日趋势核心评分
   let trendScore = 0;
   // 一字板惩罚：一字板的趋势评分大幅降低，因为流动性差
@@ -456,6 +538,13 @@ export function performTechnicalAnalysis(klines: KLineData[], stockCode?: string
   if (volumeRatio >= 5.0) trendScore += 20; // 5日/20日均量比≥5倍，成交量暴增
   else if (volumeRatio >= 3.0) trendScore += 15; // 5日/20日均量比≥3倍，成交量显著放大
   else if (volumeRatio < 2.0) trendScore -= 15; // 5日/20日均量比<2倍，成交量不足，惩罚15分
+
+  // CYC成本均线评分
+  // 收盘价连续高于CYC指标表示市场持仓成本在股价下方，买盘力量较强
+  if (priceAboveCYC) trendScore += 20; // 连续5日收盘价高于5日CYC，买盘强劲
+  else if (consecutiveDaysAboveCYC >= 3) trendScore += 10; // 连续3-4日收盘价高于5日CYC，买盘较好
+  else if (consecutiveDaysAboveCYC >= 1) trendScore += 5; // 连续1-2日收盘价高于5日CYC，买盘一般
+  // 收盘价低于CYC不加分
 
   trendScore = Math.min(Math.round(trendScore * oneSidedPenalty), 100);
 
@@ -512,6 +601,9 @@ export function performTechnicalAnalysis(klines: KLineData[], stockCode?: string
     volume20DayAvg: volumeTrend.avg20Day,
     volumeIncreasing: volumeTrend.isIncreasing,
     priceVolumeCorrelation,
+    cyc5Day,
+    consecutiveDaysAboveCYC,
+    priceAboveCYC,
     trendScore,
     volumeScore,
     leaderScore,
