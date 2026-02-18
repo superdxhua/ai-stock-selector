@@ -26,6 +26,7 @@ interface StockWithScore {
   changePercent: number;
   volume: number;
   marketCap: number;
+  amount?: number; // 成交额（万元）
   trendScore?: number;
   volumeScore?: number;
   leaderScore?: number;
@@ -34,6 +35,7 @@ interface StockWithScore {
     consecutiveRises: number;
     price5DayChange: number;
     hasLimitUp: boolean;
+    isOneSidedLimitUp?: boolean;
     macdGoldenCross: boolean;
     volumeIncreasing: boolean;
     priceVolumeCorrelation: number;
@@ -111,6 +113,7 @@ export async function GET(request: NextRequest) {
         changePercent: formatted.changePercent,
         volume: formatted.volume,
         marketCap: formatted.marketCap,
+        amount: formatted.amount, // 添加成交额字段
       };
     });
 

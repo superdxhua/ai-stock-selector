@@ -95,7 +95,7 @@ export async function getStockList(): Promise<StockBasicInfo[]> {
       invt: "2",
       fid: "f3",
       fs: "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23",
-      fields: "f12,f14,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f15,f16,f17,f18,f20,f21,f22,f23,f38",
+      fields: "f12,f14,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f15,f16,f17,f18,f20,f21,f22,f23,f38,f40",
     });
 
     const response = await fetch(`${EASTMONEY_API.stockList}?${params}`, {
@@ -204,9 +204,9 @@ export function formatStockData(stock: StockBasicInfo) {
     price: price,
     change: change,
     changePercent: changePercent,
-    volume: (stock.f38 || stock.f7) * 100, // 优先使用f38（准确），否则使用f7，转换为股
+    volume: Math.round((stock.f40 || 0) / price), // 成交量（股）= 成交额（元）/ 价格
     marketCap: stock.f20, // f20字段已经是元为单位
-    amount: (stock.f38 || 0) * 100 * price / 10000, // 成交额（万元）= 成交量手数 × 100 × 价格 / 10000
+    amount: (stock.f40 || 0) / 10000, // 成交额（万元）
     turnoverRate: stock.f18, // 换手率
     high: stock.f9,
     low: stock.f10,
