@@ -7,9 +7,10 @@ import BullStockAnalysis from "@/components/BullStockAnalysis";
 import StockTrackingManager from "@/components/StockTrackingManager";
 import ExperienceLibrary from "@/components/ExperienceLibrary";
 import AutoTaskMonitor from "@/components/AutoTaskMonitor";
+import TonghuashunStrategy from "@/components/TonghuashunStrategy";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"chat" | "stocks" | "bull" | "scheduler" | "tracking" | "experience">("chat");
+  const [activeTab, setActiveTab] = useState<"chat" | "stocks" | "bull" | "scheduler" | "tracking" | "experience" | "tonghuashun">("chat");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
@@ -40,6 +41,16 @@ export default function Home() {
                 }`}
               >
                 📊 策略
+              </button>
+              <button
+                onClick={() => setActiveTab("tonghuashun")}
+                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+                  activeTab === "tonghuashun"
+                    ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                🌸 同花顺
               </button>
               <button
                 onClick={() => setActiveTab("bull")}
@@ -90,6 +101,7 @@ export default function Home() {
       <main className="container mx-auto px-4 py-6">
         {activeTab === "chat" && <ChatInterface />}
         {activeTab === "stocks" && <StockList />}
+        {activeTab === "tonghuashun" && <TonghuashunStrategy />}
         {activeTab === "bull" && <BullStockAnalysis />}
         {activeTab === "tracking" && <StockTrackingManager />}
         {activeTab === "experience" && <ExperienceLibrary />}
