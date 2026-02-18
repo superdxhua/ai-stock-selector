@@ -153,7 +153,7 @@ export default function TonghuashunStrategy() {
         <div className="flex gap-2">
           <Button
             onClick={() => setShowAddForm(!showAddForm)}
-            variant="outline"
+            className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
           >
             <Plus className="w-4 h-4 mr-2" />
             添加股票
@@ -165,11 +165,54 @@ export default function TonghuashunStrategy() {
         </div>
       </div>
 
+      {/* 快捷添加区域 */}
+      {!showAddForm && (
+        <Card className="bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950 dark:to-rose-950 border-pink-200 dark:border-pink-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <Input
+                  placeholder="输入股票代码（如：603466）快速添加..."
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && formData.code) {
+                      setShowAddForm(true);
+                    }
+                  }}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                />
+              </div>
+              <Button
+                onClick={() => setShowAddForm(true)}
+                disabled={!formData.code}
+                className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
+              >
+                去完善信息
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 添加股票表单 */}
       {showAddForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>添加股票到同花顺策略</CardTitle>
+        <Card className="border-2 border-pink-200 dark:border-pink-800 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950 dark:to-rose-950">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-pink-900 dark:text-pink-100">
+                <Plus className="w-5 h-5 inline mr-2" />
+                添加股票到同花顺策略
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAddForm(false)}
+              >
+                ✕
+              </Button>
+            </div>
+            <CardDescription>
+              将您认为值得关注的股票添加到策略池中进行跟踪分析
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={addStock} className="space-y-4">
@@ -220,7 +263,13 @@ export default function TonghuashunStrategy() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button type="submit">添加</Button>
+                <Button 
+                  type="submit"
+                  className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  添加股票
+                </Button>
                 <Button
                   type="button"
                   variant="outline"
