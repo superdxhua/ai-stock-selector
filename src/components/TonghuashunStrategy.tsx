@@ -277,7 +277,7 @@ function StrategyPanel({
                 className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                添加
+                保存
               </Button>
               <Button onClick={loadStocks} variant="outline">
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -334,7 +334,7 @@ function StrategyPanel({
                       className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      添加股票
+                      保存
                     </Button>
                     <Button
                       type="button"
