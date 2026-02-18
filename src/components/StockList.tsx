@@ -325,7 +325,7 @@ export default function StockList() {
                 )}
                 <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-md">
                   <span className="flex items-center gap-1">
-                    ⚠️ 已过滤：科创板、北交所、ST、退市整理期、停牌、特殊处理股票
+                    ⚠️ 已过滤：科创板、北交所、ST、退市整理期、停牌、特殊处理、市值700亿以上
                   </span>
                 </Badge>
                 <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-md">

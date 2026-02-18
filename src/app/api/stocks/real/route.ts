@@ -82,6 +82,13 @@ function filterStocks(stocks: any[]): any[] {
       return false;
     }
 
+    // 排除市值700亿元以上的股票
+    // f20字段是总市值（单位：元）
+    const marketCap = stock.f20 || stock.marketCap;
+    if (marketCap && marketCap > 700000000000) {
+      return false;
+    }
+
     return true;
   });
 }
@@ -90,7 +97,7 @@ function filterStocks(stocks: any[]): any[] {
  * GET /api/stocks/real - 获取真实股票数据
  * 支持策略筛选参数: strategy=5day-trend|5day-volume|leader
  * 默认策略: 5day-trend
- * 
+ *
  * 注意：自动过滤以下类型股票
  * - 科创板（688开头）
  * - 北交所（830/831/832开头）
@@ -98,6 +105,7 @@ function filterStocks(stocks: any[]): any[] {
  * - 退市整理期股票
  * - 停牌股票
  * - 其他特殊处理股票
+ * - 市值700亿元以上的股票
  */
 export async function GET(request: NextRequest) {
   try {
