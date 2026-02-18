@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3 } from "lucide-react";
 import Link from "next/link";
+import StrategyCalendar from "./StrategyCalendar";
+import ConsecutiveStocks from "./ConsecutiveStocks";
 
 interface Stock {
   code: string;
@@ -41,11 +43,29 @@ export default function StockList() {
       const data = await response.json();
       if (data.success) {
         setStocks(data.data);
+
+        // 如果是策略筛选，自动保存历史记录
+        if (strategy !== "all" && data.data && data.data.length > 0) {
+          saveHistory(strategy, data.data);
+        }
       }
     } catch (error) {
       console.error("Error fetching stocks:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 保存历史记录
+  const saveHistory = async (strategy: string, stocks: any[]) => {
+    try {
+      await fetch("/api/strategy-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ strategy, stocks }),
+      });
+    } catch (error) {
+      console.error("Error saving history:", error);
     }
   };
 
@@ -241,6 +261,14 @@ export default function StockList() {
           </p>
         )}
       </Card>
+
+      {/* 日历和连续上榜（仅策略模式下显示） */}
+      {(selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume") && (
+        <>
+          <StrategyCalendar strategy={selectedStrategy} />
+          <ConsecutiveStocks strategy={selectedStrategy} />
+        </>
+      )}
     </div>
   );
 }
