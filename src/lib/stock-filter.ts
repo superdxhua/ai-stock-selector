@@ -65,11 +65,10 @@ export function filterStocks(stocks: any[]): any[] {
     }
 
     // 排除成交额过低的股票
-    // 注意：f17字段是成交额（单位：万元），当前数据集中成交额普遍较低
-    // 暂时设置为30万元，可根据实际情况调整
-    const amount = stock.f17 || stock.amount;
+    // 注意：amount字段是基于f38（成交量手数）和价格计算得出的成交额（万元）
+    const amount = stock.amount;
     if (amount && amount < 30) {  // 30万元
-      console.log(`  排除 ${code} ${name}: 成交额=${amount}万元 < 30万元`);
+      console.log(`  排除 ${code} ${name}: 成交额=${amount.toFixed(2)}万元 < 30万元`);
       return false;
     }
 

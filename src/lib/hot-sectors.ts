@@ -119,7 +119,7 @@ export async function getSectorStocks(sectorCode: string): Promise<any[]> {
       invt: "2",
       fid: "f3",
       fs: `b:${sectorCode}+f:!50`, // 从指定板块获取股票，排除50和60开头的
-      fields: "f12,f14,f3,f4,f20,f17,f21", // 包含代码、名称、涨跌幅、价格、市值、成交额
+      fields: "f12,f14,f2,f3,f4,f20,f17,f21,f38", // 包含代码、名称、最新价、涨跌幅、昨收、市值、成交额、成交量
     });
 
     const response = await fetch(`${SECTOR_API.sectorList}?${params}`, {
@@ -196,8 +196,10 @@ export async function filterHotSectorStocks(
         // 优先使用热点板块股票的市值等字段
         const mergedStock = {
           ...stock,
+          f2: hotSectorStock.f2 || stock.f2,
           f20: hotSectorStock.f20 || stock.f20,
           f17: hotSectorStock.f17 || stock.f17,
+          f38: hotSectorStock.f38 || stock.f38,
         };
 
         // 检查市值过滤：40亿-700亿元
