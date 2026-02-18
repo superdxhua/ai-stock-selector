@@ -121,6 +121,16 @@ export async function GET(request: NextRequest) {
       recommendedLeader: analyzedStocks.filter(s => s.recommendedStrategies.includes('leader')).length,
     };
 
+    // 保存跟踪记录到数据库
+    try {
+      const { saveTrackingRecordsBatch } = await import('@/lib/stock-tracking');
+      await saveTrackingRecordsBatch(result);
+      console.log(`✓ 已保存 ${result.length} 条跟踪记录到数据库`);
+    } catch (error) {
+      console.error('保存跟踪记录失败:', error);
+      // 不影响主流程，只记录错误
+    }
+
     return NextResponse.json({
       success: true,
       data: result,

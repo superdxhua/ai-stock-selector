@@ -17,6 +17,10 @@ export enum TaskType {
   STOCK_ANALYSIS = 'stock_analysis', // 股票分析任务
   BULL_STOCK_SCAN = 'bull_stock_scan', // 大牛股扫描任务
   STRATEGY_UPDATE = 'strategy_update', // 策略更新任务
+  TRACKING_INIT = 'tracking_init', // 跟踪初始化任务
+  T1_OBSERVATION = 't1_observation', // T+1观察任务
+  T3_OBSERVATION = 't3_observation', // T+3观察任务
+  TRACKING_VALIDATION = 'tracking_validation', // 跟踪验证任务
 }
 
 /**
@@ -83,8 +87,28 @@ export class TaskScheduler {
     });
 
     // 每30分钟执行一次策略更新
-    this.schedule(TaskType.STOCK_ANALYSIS, '*/30 * * * *', async () => {
+    this.schedule(TaskType.STRATEGY_UPDATE, '*/30 * * * *', async () => {
       await this.executeIfNeeded(TaskType.STRATEGY_UPDATE);
+    });
+
+    // 每日9:30执行跟踪初始化（开盘后立即执行）
+    this.schedule(TaskType.TRACKING_INIT, '30 9 * * 1-5', async () => {
+      await this.executeTask(TaskType.TRACKING_INIT);
+    });
+
+    // 每日9:35执行T+1观察
+    this.schedule(TaskType.T1_OBSERVATION, '35 9 * * 1-5', async () => {
+      await this.executeTask(TaskType.T1_OBSERVATION);
+    });
+
+    // 每日9:35执行T+3观察
+    this.schedule(TaskType.T3_OBSERVATION, '35 9 * * 1-5', async () => {
+      await this.executeTask(TaskType.T3_OBSERVATION);
+    });
+
+    // 每日15:30执行跟踪验证（收盘后）
+    this.schedule(TaskType.TRACKING_VALIDATION, '30 15 * * 1-5', async () => {
+      await this.executeTask(TaskType.TRACKING_VALIDATION);
     });
 
     console.log('✅ 任务调度器已启动');
@@ -173,6 +197,18 @@ export class TaskScheduler {
         case TaskType.STRATEGY_UPDATE:
           result = await this.executeStrategyUpdate();
           break;
+        case TaskType.TRACKING_INIT:
+          result = await this.executeTrackingInit();
+          break;
+        case TaskType.T1_OBSERVATION:
+          result = await this.executeT1Observation();
+          break;
+        case TaskType.T3_OBSERVATION:
+          result = await this.executeT3Observation();
+          break;
+        case TaskType.TRACKING_VALIDATION:
+          result = await this.executeTrackingValidation();
+          break;
       }
 
       // 更新执行记录
@@ -242,7 +278,7 @@ export class TaskScheduler {
 
     // 更新所有三个策略
     const strategies = ['5day-trend', '5day-volume', 'leader'];
-    const results = [];
+    const results: { strategy: string; count: number }[] = [];
 
     for (const strategy of strategies) {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000'}/api/stocks/real?strategy=${strategy}`);
@@ -257,6 +293,46 @@ export class TaskScheduler {
       strategies: results,
       totalStocks: results.reduce((sum, r) => sum + r.count, 0),
     };
+  }
+
+  /**
+   * 执行跟踪初始化任务
+   */
+  private async executeTrackingInit(): Promise<any> {
+    console.log('  → 执行跟踪初始化任务');
+
+    const { executeTrackingInitTask } = await import('./tracking-tasks');
+    return await executeTrackingInitTask();
+  }
+
+  /**
+   * 执行T+1观察任务
+   */
+  private async executeT1Observation(): Promise<any> {
+    console.log('  → 执行T+1观察任务');
+
+    const { executeT1ObservationTask } = await import('./tracking-tasks');
+    return await executeT1ObservationTask();
+  }
+
+  /**
+   * 执行T+3观察任务
+   */
+  private async executeT3Observation(): Promise<any> {
+    console.log('  → 执行T+3观察任务');
+
+    const { executeT3ObservationTask } = await import('./tracking-tasks');
+    return await executeT3ObservationTask();
+  }
+
+  /**
+   * 执行跟踪验证任务
+   */
+  private async executeTrackingValidation(): Promise<any> {
+    console.log('  → 执行跟踪验证任务');
+
+    const { executeTrackingValidationTask } = await import('./tracking-tasks');
+    return await executeTrackingValidationTask();
   }
 
   /**
