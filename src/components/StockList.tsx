@@ -323,7 +323,7 @@ export default function StockList() {
                 )}
                 <Badge className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white border-0 shadow-lg">
                   <span className="flex items-center gap-1">
-                    ⚠️ 已过滤：科创板、北交所、ST、退市风险、停牌、特殊处理、市值40-700亿外、成交额30万以下
+                    ⚠️ 已过滤：科创板、北交所、ST、退市风险、停牌、特殊处理、流通值40-700亿外、成交额5亿以下
                   </span>
                 </Badge>
                 <Badge className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white border-0 shadow-lg">
@@ -352,7 +352,7 @@ export default function StockList() {
                   <TableHead className="text-right font-semibold">涨跌额</TableHead>
                   <TableHead className="text-right font-semibold">涨跌幅</TableHead>
                   <TableHead className="text-right font-semibold">成交量</TableHead>
-                  <TableHead className="text-right font-semibold">市值</TableHead>
+                  <TableHead className="text-right font-semibold">流通值</TableHead>
                   {showScore && selectedStrategy === "leader" && (
                     <TableHead className="text-right font-semibold">趋势评分</TableHead>
                   )}
