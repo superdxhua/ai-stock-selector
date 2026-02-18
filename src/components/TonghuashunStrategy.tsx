@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Plus, RefreshCw, TrendingUp, BarChart3, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -14,7 +13,6 @@ interface TonghuashunStock {
   stock_code: string;
   stock_name: string;
   strategy_type: string;
-  reason?: string;
   source: string;
   price?: number;
   change_percent?: number;
@@ -50,7 +48,6 @@ function StrategyPanel({
   const [formData, setFormData] = useState({
     code: "",
     name: "",
-    reason: "",
   });
 
   const loadStocks = async () => {
@@ -86,7 +83,7 @@ function StrategyPanel({
       if (result.success) {
         alert("股票添加成功");
         setShowAddForm(false);
-        setFormData({ code: "", name: "", reason: "" });
+        setFormData({ code: "", name: "" });
         loadStocks();
       } else {
         alert(result.error);
@@ -331,15 +328,6 @@ function StrategyPanel({
                       />
                     </div>
                   </div>
-                  <div>
-                    <Label htmlFor="reason">添加原因（可选）</Label>
-                    <Textarea
-                      id="reason"
-                      placeholder="说明为什么添加此股票..."
-                      value={formData.reason}
-                      onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                    />
-                  </div>
                   <div className="flex gap-2">
                     <Button
                       type="submit"
@@ -375,7 +363,6 @@ function StrategyPanel({
                     <TableHead>名称</TableHead>
                     <TableHead>价格</TableHead>
                     <TableHead>涨跌幅</TableHead>
-                    <TableHead>添加原因</TableHead>
                     <TableHead>添加时间</TableHead>
                     <TableHead>操作</TableHead>
                   </TableRow>
@@ -388,11 +375,6 @@ function StrategyPanel({
                       <TableCell>{stock.price?.toFixed(2)}</TableCell>
                       <TableCell className={stock.change_percent && stock.change_percent > 0 ? "text-red-500" : "text-green-500"}>
                         {stock.change_percent?.toFixed(2)}%
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-xs text-slate-500 max-w-32 truncate block">
-                          {stock.reason || "-"}
-                        </span>
                       </TableCell>
                       <TableCell>
                         <span className="text-xs text-slate-500">
