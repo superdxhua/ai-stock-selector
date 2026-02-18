@@ -70,7 +70,7 @@ function StrategyPanel({
 
   const fetchStockName = async (code: string) => {
     if (code.length !== 6) {
-      setFormData({ ...formData, name: "" });
+      setFormData(prev => ({ ...prev, name: "" }));
       return;
     }
 
@@ -81,19 +81,24 @@ function StrategyPanel({
       const result = await response.json();
       
       if (result.success && result.data) {
-        setFormData({ ...formData, code, name: result.data.name });
+        setFormData(prev => ({ ...prev, code, name: result.data.name }));
       } else {
-        setFormData({ ...formData, code, name: "" });
+        setFormData(prev => ({ ...prev, code, name: "" }));
       }
     } catch (error) {
       console.error("获取股票名称失败:", error);
+      setFormData(prev => ({ ...prev, name: "" }));
     } finally {
       setFetchingName(false);
     }
   };
 
-  const addStock = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const quickAddStock = async () => {
+    if (!formData.code || !formData.name) {
+      alert("请输入有效的股票代码");
+      return;
+    }
+    
     try {
       const response = await fetch("/api/tonghuashun/stocks", {
         method: "POST",
@@ -108,7 +113,6 @@ function StrategyPanel({
       
       if (result.success) {
         alert("股票添加成功");
-        setShowAddForm(false);
         setFormData({ code: "", name: "" });
         loadStocks();
       } else {
@@ -118,6 +122,12 @@ function StrategyPanel({
       console.error("添加股票失败:", error);
       alert("添加失败");
     }
+  };
+
+  const addStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await quickAddStock();
+    setShowAddForm(false);
   };
 
   const deleteStock = async (code: string) => {
@@ -289,29 +299,33 @@ function StrategyPanel({
           {!showAddForm && (
             <div className="flex gap-2">
               <Input
-                placeholder="输入6位股票代码（如：603466）自动获取名称，可添加任意股票..."
+                placeholder="输入6位股票代码（如：600519）自动获取名称..."
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter' && formData.code) {
-                    setShowAddForm(true);
+                  if (e.key === 'Enter' && formData.code && formData.name) {
+                    quickAddStock();
                   }
                 }}
                 onChange={(e) => {
-                  setFormData({ ...formData, code: e.target.value });
-                  fetchStockName(e.target.value);
+                  const newCode = e.target.value;
+                  setFormData(prev => ({ ...prev, code: newCode }));
+                  fetchStockName(newCode);
                 }}
                 value={formData.code}
               />
               <Button
-                onClick={() => setShowAddForm(true)}
+                onClick={quickAddStock}
                 disabled={!formData.code || !formData.name}
                 className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                保存
+                快速添加
               </Button>
               <Button onClick={loadStocks} variant="outline">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 刷新
+              </Button>
+              <Button onClick={() => setShowAddForm(true)} variant="outline">
+                详细表单
               </Button>
             </div>
           )}
@@ -341,11 +355,12 @@ function StrategyPanel({
                       <Label htmlFor="code">股票代码</Label>
                       <Input
                         id="code"
-                        placeholder="例如：603466"
+                        placeholder="例如：600519"
                         value={formData.code}
                         onChange={(e) => {
-                          setFormData({ ...formData, code: e.target.value });
-                          fetchStockName(e.target.value);
+                          const newCode = e.target.value;
+                          setFormData(prev => ({ ...prev, code: newCode }));
+                          fetchStockName(newCode);
                         }}
                         required
                       />
@@ -356,7 +371,7 @@ function StrategyPanel({
                         id="name"
                         placeholder="自动获取或手动输入"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                         required
                       />
                     </div>
