@@ -27,7 +27,7 @@ interface Stock {
 const strategies = [
   { id: "5day-trend", name: "5日趋势核心", description: "短期强势上涨股（评分≥50）" },
   { id: "5day-volume", name: "5日容量核心", description: "成交量活跃股（评分≥50）" },
-  { id: "leader", name: "龙头精选", description: "每天精选3只最优质龙头（评分≥50）" },
+  { id: "leader", name: "龙头精选", description: "从趋势+容量双池优中选优，精选3只龙头" },
 ];
 
 export default function StockList() {

@@ -148,9 +148,10 @@ export async function GET(request: NextRequest) {
     stockList = filterStocks(stockList);
     console.log(`过滤后剩余 ${stockList.length} 只股票（已排除科创板和ST）`);
 
-    // 策略筛选，分析前30只股票
-    let targetStocks = stockList.slice(0, 30);
-    console.log(`策略筛选，分析前30只股票`);
+    // 策略筛选
+    // 龙头精选需要分析更多股票，以实现优中选优
+    let targetStocks = strategy === 'leader' ? stockList.slice(0, 100) : stockList.slice(0, 30);
+    console.log(`策略筛选，分析${strategy === 'leader' ? 100 : 30}只股票`);
 
     // 转换数据格式
     let stocks: StockWithScore[] = targetStocks.map(stock => {
@@ -232,12 +233,50 @@ export async function GET(request: NextRequest) {
         sortedStocks.sort((a, b) => (b.volumeScore || 0) - (a.volumeScore || 0));
         console.log(`5日容量核心排序完成，最高分: ${sortedStocks[0]?.volumeScore}`);
       } else if (strategy === 'leader') {
-        sortedStocks.sort((a, b) => (b.leaderScore || 0) - (a.leaderScore || 0));
-        console.log(`龙头精选排序完成，最高分: ${sortedStocks[0]?.leaderScore}`);
+        console.log(`龙头精选策略：优中选优`);
+        // 龙头精选策略：从5日趋势核心和5日容量核心两个池子中优中选优
+        // 第一步：筛选出趋势池和容量池
+        const trendPool = stocks.filter(stock => (stock.trendScore || 0) >= 50);
+        const volumePool = stocks.filter(stock => (stock.volumeScore || 0) >= 50);
+
+        console.log(`  - 趋势池（trendScore >= 50）: ${trendPool.length} 只`);
+        console.log(`  - 容量池（volumeScore >= 50）: ${volumePool.length} 只`);
+
+        // 第二步：合并两个池子，去重
+        const poolMap = new Map();
+        trendPool.forEach(stock => poolMap.set(stock.code, stock));
+        volumePool.forEach(stock => poolMap.set(stock.code, stock));
+
+        const combinedPool = Array.from(poolMap.values());
+        console.log(`  - 合并池: ${combinedPool.length} 只`);
+
+        if (combinedPool.length === 0) {
+          // 如果没有股票达到标准，则选择综合评分最高的
+          console.log(`  - 警告：无股票达到标准，选择综合评分最高的`);
+          sortedStocks.sort((a, b) => {
+            const scoreA = (a.trendScore || 0) + (a.volumeScore || 0) + (a.leaderScore || 0);
+            const scoreB = (b.trendScore || 0) + (b.volumeScore || 0) + (b.leaderScore || 0);
+            return scoreB - scoreA;
+          });
+        } else {
+          // 第三步：从合并池中优中选优
+          // 计算综合评分 = trendScore * 0.4 + volumeScore * 0.3 + leaderScore * 0.3
+          combinedPool.forEach(stock => {
+            const trendScore = stock.trendScore || 0;
+            const volumeScore = stock.volumeScore || 0;
+            const leaderScore = stock.leaderScore || 0;
+            stock.leaderScore = Math.round(trendScore * 0.4 + volumeScore * 0.3 + leaderScore * 0.3);
+          });
+
+          sortedStocks = combinedPool;
+          sortedStocks.sort((a, b) => (b.leaderScore || 0) - (a.leaderScore || 0));
+
+          console.log(`  - 综合评分排序完成，最高分: ${sortedStocks[0]?.leaderScore}`);
+        }
 
         // 龙头精选只返回前3只
         sortedStocks = sortedStocks.slice(0, 3);
-        console.log(`龙头精选筛选完成，返回前3只`);
+        console.log(`龙头精选筛选完成，返回前3只优中选优股票`);
       }
 
       // 过滤评分≥50的股票（除了龙头精选，龙头精选已经取了前3只）
