@@ -238,18 +238,20 @@ export default function StockList() {
         {selectedStrategy === "5day-trend" && (
           <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
             <p><strong>筛选条件：</strong></p>
+            <p>• <strong>5日内至少有一个涨停板（必选）</strong></p>
             <p>• 连续3天以上上涨</p>
-            <p>• 5日涨幅 > 3%</p>
+            <p>• 5日涨幅 &gt; 3%</p>
             <p>• 价格在MA5上方</p>
-            <p>• MACD金叉（DIF > DEA）</p>
+            <p>• MACD金叉（DIF &gt; DEA）</p>
             <p><strong>评分规则：</strong>连阳天数(30分) + 5日涨幅(25分) + 技术形态(25分) + MACD金叉(20分)</p>
           </div>
         )}
         {selectedStrategy === "5day-volume" && (
           <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
             <p><strong>筛选条件：</strong></p>
-            <p>• 5日均量 > 10日均量的1.2倍</p>
-            <p>• 换手率 > 3%</p>
+            <p>• <strong>5日内至少有一个涨停板（必选）</strong></p>
+            <p>• 5日均量 &gt; 10日均量的1.2倍</p>
+            <p>• 换手率 &gt; 3%</p>
             <p>• 成交量递增趋势</p>
             <p>• 量价配合良好</p>
             <p><strong>评分规则：</strong>均量倍数(35分) + 换手率(25分) + 成交量递增(20分) + 量价配合(20分)</p>

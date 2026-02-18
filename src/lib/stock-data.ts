@@ -20,6 +20,7 @@ export interface KLineData {
   low: number;
   close: number;
   volume: number;
+  changePercent: number; // 当日涨跌幅
 }
 
 export interface StockDetail extends Stock {
@@ -128,6 +129,13 @@ export const stockList: Stock[] = [
   },
 ];
 
+// 检查5日内是否有涨停板（涨幅>=9.9%）
+function hasLimitUpIn5Days(kline: KLineData[]): boolean {
+  if (kline.length < 5) return false;
+  const recent5 = kline.slice(-5);
+  return recent5.some((d) => d.changePercent >= 9.9);
+}
+
 // 生成模拟 K 线数据（支持指定趋势）
 function generateKLineData(
   basePrice: number,
@@ -147,7 +155,8 @@ function generateKLineData(
     const dateStr = date.toISOString().split("T")[0];
 
     const isUp = Math.random() < upProbability;
-    const maxChange = isUp ? 0.06 : 0.04;
+    // 增加涨停板概率：最大涨幅可达到 12%
+    const maxChange = isUp ? 0.12 : 0.04;
     const changePercent = isUp
       ? Math.random() * maxChange
       : -Math.random() * maxChange;
@@ -171,6 +180,7 @@ function generateKLineData(
       low: Number(low.toFixed(2)),
       close: Number(close.toFixed(2)),
       volume: Math.floor(volume),
+      changePercent: Number((changePercent * 100).toFixed(2)),
     });
 
     price = close;
@@ -246,6 +256,11 @@ function calculate5DayTrendScore(kline: KLineData[]): number {
   const recent5 = kline.slice(-5);
   if (recent5.length < 5) return 0;
 
+  // 必选条件：5日内至少有一个涨停板
+  if (!hasLimitUpIn5Days(kline)) {
+    return 0;
+  }
+
   let score = 0;
 
   // 1. 连阳天数 (权重30)
@@ -292,6 +307,11 @@ function calculate5DayTrendScore(kline: KLineData[]): number {
 function calculate5DayVolumeScore(kline: KLineData[], stockPrice: number): number {
   const recent5 = kline.slice(-5);
   if (recent5.length < 5) return 0;
+
+  // 必选条件：5日内至少有一个涨停板
+  if (!hasLimitUpIn5Days(kline)) {
+    return 0;
+  }
 
   let score = 0;
 
