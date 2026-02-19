@@ -51,6 +51,8 @@ function StrategyPanel({
   });
 
   const [fetchingName, setFetchingName] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   const loadStocks = async () => {
     setLoading(true);
@@ -68,45 +70,74 @@ function StrategyPanel({
     }
   };
 
-  const fetchStockName = async (code: string) => {
-    if (code.length !== 6) {
-      // 如果长度不是6，清空名称
+  const fetchStockInfo = async (input: string) => {
+    if (!input || input.length < 2) {
       setFormData(prev => ({ ...prev, name: "" }));
-      return;
-    }
-
-    // 验证是否为纯数字
-    if (!/^\d{6}$/.test(code)) {
-      console.error("股票代码格式不正确:", code);
-      setFormData(prev => ({ ...prev, name: "" }));
-      alert("股票代码必须是6位数字");
+      setSearchResults([]);
+      setShowSearchResults(false);
       return;
     }
 
     setFetchingName(true);
+    setShowSearchResults(false);
+
     try {
-      // 调用独立的股票信息API
-      console.log("开始获取股票名称:", code);
-      const response = await fetch(`/api/stock/info?code=${code}`);
+      // 判断输入的是代码还是名称
+      const isCode = /^\d{6}$/.test(input);
+      
+      let apiUrl = "";
+      if (isCode) {
+        // 输入的是代码
+        apiUrl = `/api/stock/info?code=${input}`;
+      } else {
+        // 输入的是名称
+        apiUrl = `/api/stock/info?name=${encodeURIComponent(input)}`;
+      }
+
+      console.log("开始获取股票信息:", input);
+      const response = await fetch(apiUrl);
       const result = await response.json();
       
-      console.log("fetchStockName result", result);
+      console.log("fetchStockInfo result", result);
       
-      if (result.success && result.data) {
-        console.log("获取成功:", result.data.name);
-        setFormData(prev => ({ ...prev, name: result.data.name }));
+      if (result.success) {
+        if (result.data.code && result.data.name) {
+          // 单只股票精确匹配
+          setFormData(prev => ({
+            code: result.data.code,
+            name: result.data.name,
+          }));
+          setSearchResults([]);
+        } else if (result.data.matches && result.data.matches.length > 0) {
+          // 多个匹配结果，显示选择列表
+          setSearchResults(result.data.matches);
+          setShowSearchResults(true);
+        }
       } else {
-        console.error("获取股票名称失败:", result);
+        console.error("获取股票信息失败:", result);
         setFormData(prev => ({ ...prev, name: "" }));
-        alert(`未找到股票代码 ${code}，请检查代码是否正确`);
+        setSearchResults([]);
       }
     } catch (error) {
-      console.error("获取股票名称失败:", error);
+      console.error("获取股票信息失败:", error);
       setFormData(prev => ({ ...prev, name: "" }));
-      alert("获取股票名称失败，请稍后重试");
+      setSearchResults([]);
     } finally {
       setFetchingName(false);
     }
+  };
+
+  const selectStock = (code: string, name: string) => {
+    setFormData(prev => ({
+      code: code,
+      name: name,
+    }));
+    setSearchResults([]);
+    setShowSearchResults(false);
+  };
+
+  const fetchStockName = async (code: string) => {
+    fetchStockInfo(code);
   };
 
   const quickAddStock = async () => {
@@ -371,39 +402,55 @@ function StrategyPanel({
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Input
-                  placeholder="输入6位股票代码（如：600519）自动获取名称..."
+                  placeholder="输入股票代码或名称（如：600519 或 平安银行）"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && formData.code && formData.name) {
                       quickAddStock();
                     }
                   }}
                   onChange={(e) => {
-                    // 只允许输入数字，最多6位
-                    let newCode = e.target.value.replace(/\D/g, "");
-                    if (newCode.length > 6) {
-                      newCode = newCode.slice(0, 6);
-                    }
+                    const inputValue = e.target.value;
                     
-                    const shouldClearName = newCode.length < 6 && formData.name !== "";
+                    // 清空之前的数据
+                    setFormData(prev => ({ 
+                      code: "",
+                      name: "" 
+                    }));
+                    setSearchResults([]);
                     
-                    if (shouldClearName) {
-                      setFormData(prev => ({ code: newCode, name: "" }));
-                    } else {
-                      setFormData(prev => ({ ...prev, code: newCode }));
-                    }
-                    
-                    // 只有当输入长度为6时才获取股票名称
-                    if (newCode.length === 6 && !fetchingName) {
-                      fetchStockName(newCode);
+                    // 当输入是6位数字时，自动获取名称
+                    if (/^\d{6}$/.test(inputValue) && !fetchingName) {
+                      fetchStockInfo(inputValue);
+                    } else if (inputValue.length >= 2 && !/^\d+$/.test(inputValue)) {
+                      // 当输入是中文名称（至少2个字符）时，延迟搜索
+                      setTimeout(() => {
+                        fetchStockInfo(inputValue);
+                      }, 500);
                     }
                   }}
-                  value={formData.code}
                   disabled={fetchingName}
-                  maxLength={6}
                 />
                 {fetchingName && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
                     获取中...
+                  </div>
+                )}
+                {/* 搜索结果下拉列表 */}
+                {showSearchResults && searchResults.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {searchResults.map((stock, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer flex justify-between items-center"
+                        onClick={() => selectStock(stock.code, stock.name)}
+                      >
+                        <div>
+                          <span className="font-semibold">{stock.name}</span>
+                          <span className="text-slate-500 ml-2">{stock.code}</span>
+                        </div>
+                        <span className="text-xs text-slate-400">选择</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -452,50 +499,72 @@ function StrategyPanel({
               <CardContent>
                 <form onSubmit={addStock} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="code">股票代码</Label>
+                    <div className="relative">
+                      <Label htmlFor="code">股票代码/名称</Label>
                       <Input
                         id="code"
-                        placeholder="例如：600519"
-                        value={formData.code}
+                        placeholder="输入代码或名称（如：600519 或 平安银行）"
+                        value={formData.code || ''}
                         onChange={(e) => {
-                          // 只允许输入数字，最多6位
-                          let newCode = e.target.value.replace(/\D/g, "");
-                          if (newCode.length > 6) {
-                            newCode = newCode.slice(0, 6);
-                          }
+                          const inputValue = e.target.value;
                           
-                          const shouldClearName = newCode.length < 6 && formData.name !== "";
+                          // 清空之前的数据
+                          setFormData(prev => ({ 
+                            code: "",
+                            name: "" 
+                          }));
+                          setSearchResults([]);
                           
-                          if (shouldClearName) {
-                            setFormData(prev => ({ code: newCode, name: "" }));
-                          } else {
-                            setFormData(prev => ({ ...prev, code: newCode }));
-                          }
-                          
-                          // 只有当输入长度为6时才获取股票名称
-                          if (newCode.length === 6 && !fetchingName) {
-                            fetchStockName(newCode);
+                          // 当输入是6位数字时，自动获取名称
+                          if (/^\d{6}$/.test(inputValue) && !fetchingName) {
+                            fetchStockInfo(inputValue);
+                          } else if (inputValue.length >= 2 && !/^\d+$/.test(inputValue)) {
+                            // 当输入是中文名称（至少2个字符）时，延迟搜索
+                            setTimeout(() => {
+                              fetchStockInfo(inputValue);
+                            }, 500);
                           }
                         }}
-                        required
-                        maxLength={6}
+                        disabled={fetchingName}
                       />
+                      {fetchingName && (
+                        <div className="absolute right-3 top-8 text-slate-500 text-sm">
+                          获取中...
+                        </div>
+                      )}
+                      {/* 搜索结果下拉列表 */}
+                      {showSearchResults && searchResults.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {searchResults.map((stock, index) => (
+                            <div
+                              key={index}
+                              className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer flex justify-between items-center"
+                              onClick={() => selectStock(stock.code, stock.name)}
+                            >
+                              <div>
+                                <span className="font-semibold">{stock.name}</span>
+                                <span className="text-slate-500 ml-2">{stock.code}</span>
+                              </div>
+                              <span className="text-xs text-slate-400">选择</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <Label htmlFor="name">股票名称</Label>
                       <Input
                         id="name"
-                        placeholder="自动获取或手动输入"
+                        placeholder="自动获取"
                         value={formData.name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                        required
+                        disabled
                       />
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
                       type="submit"
+                      disabled={!formData.code || !formData.name}
                       className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
                     >
                       <Plus className="w-4 h-4 mr-2" />
