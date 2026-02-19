@@ -23,24 +23,6 @@ export const strategyStockHistory = pgTable("strategy_stock_history", {
 	unique("unique_stock_strategy_date").on(table.stockCode, table.strategy, table.date),
 ]);
 
-export const tonghuashunStrategies = pgTable("tonghuashun_strategies", {
-	id: bigserial({ mode: "bigint" }).primaryKey().notNull(),
-	stockCode: varchar("stock_code", { length: 20 }).notNull(),
-	stockName: varchar("stock_name", { length: 100 }).notNull(),
-	strategyType: varchar("strategy_type", { length: 50 }).notNull(), // 5day-trend 或 5day-volume
-	reason: text(), // 添加原因
-	source: varchar("source", { length: 100 }).default('manual'), // manual, auto_learn
-	learnedFeatures: jsonb("learned_features"), // 自学习到的特征
-	price: numeric({ precision: 10, scale: 2 }),
-	changePercent: numeric("change_percent", { precision: 5, scale: 2 }),
-	addedAt: timestamp("added_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-}, (table) => [
-	unique("unique_stock_strategy").on(table.stockCode, table.strategyType),
-	index("idx_tonghuashun_strategies_type").on(table.strategyType),
-	index("idx_tonghuashun_strategies_source").on(table.source),
-]);
-
 export const healthCheck = pgTable("health_check", {
 	id: serial().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
@@ -136,4 +118,22 @@ export const trackingObservations = pgTable("tracking_observations", {
 			foreignColumns: [stockTrackingRecords.id],
 			name: "tracking_observations_trackingRecordId_stock_tracking_records_i"
 		}).onDelete("cascade"),
+]);
+
+export const tonghuashunStrategies = pgTable("tonghuashun_strategies", {
+	id: bigserial({ mode: "bigint" }).primaryKey().notNull(),
+	stockCode: varchar("stock_code", { length: 20 }).notNull(),
+	stockName: varchar("stock_name", { length: 100 }).notNull(),
+	strategyType: varchar("strategy_type", { length: 50 }).notNull(),
+	reason: text(),
+	source: varchar({ length: 100 }).default('manual'),
+	learnedFeatures: jsonb("learned_features"),
+	price: numeric({ precision: 10, scale:  2 }),
+	changePercent: numeric("change_percent", { precision: 5, scale:  2 }),
+	addedAt: timestamp("added_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+}, (table) => [
+	index("idx_tonghuashun_strategies_source").using("btree", table.source.asc().nullsLast().op("text_ops")),
+	index("idx_tonghuashun_strategies_type").using("btree", table.strategyType.asc().nullsLast().op("text_ops")),
+	unique("unique_stock_strategy").on(table.stockCode, table.strategyType),
 ]);

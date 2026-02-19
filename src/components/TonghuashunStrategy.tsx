@@ -254,6 +254,22 @@ function StrategyPanel({
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* 学习评分 */}
+                {analysisResult.learningScore !== undefined && (
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-purple-900 dark:text-purple-100">学习评分</h4>
+                        <p className="text-sm text-purple-700 dark:text-purple-300">自我评估学习效果</p>
+                      </div>
+                      <div className="text-3xl font-bold text-purple-900 dark:text-purple-100">
+                        {analysisResult.learningScore.toFixed(0)}
+                        <span className="text-lg font-normal text-purple-700 dark:text-purple-300">/100</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <h4 className="font-semibold mb-2">特征统计</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -307,6 +323,45 @@ function StrategyPanel({
                     ))}
                   </ul>
                 </div>
+                {/* 应用优化按钮 */}
+                {analysisResult.recommendations.length > 0 && (
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      onClick={async () => {
+                        if (confirm('确认应用这些优化建议吗？这将调整策略评分权重。')) {
+                          try {
+                            const response = await fetch('/api/tonghuashun/optimize', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                strategyType,
+                                apply: true,
+                              }),
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                              alert('策略优化已应用！');
+                              setShowAnalysis(false);
+                            } else {
+                              alert('应用优化失败：' + result.error);
+                            }
+                          } catch (error) {
+                            alert('应用优化失败：' + error);
+                          }
+                        }
+                      }}
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                    >
+                      ✅ 应用优化建议
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAnalysis(false)}
+                    >
+                      稍后再说
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

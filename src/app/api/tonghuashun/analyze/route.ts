@@ -140,8 +140,15 @@ export async function POST(request: NextRequest) {
     if (features.avgPriceAboveCYC > 0.5) features.commonFeatures.push('收盘价高于CYC');
     if (features.avgMACDGoldenCross > 0.5) features.commonFeatures.push('MACD金叉');
 
-    // 更新数据库中的学习特征
+    // 生成优化建议
+    const recommendations = generateRecommendations(features, strategyType);
+    
+    // 计算学习评分（自我评估）
+    const learningScore = calculateLearningScore(features, count);
+
+    // 保存学习记录到数据库
     if (count > 0) {
+      // 1. 更新 tonghuashun_strategies 表中的学习特征
       await client
         .from('tonghuashun_strategies')
         .update({
@@ -149,6 +156,31 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('strategy_type', strategyType);
+
+      // 2. 保存完整的学习记录到 tonghuashun_learning_records 表
+      const { error: insertError } = await client
+        .from('tonghuashun_learning_records')
+        .insert({
+          strategy_type: strategyType,
+          analyze_date: new Date().toISOString(),
+          stock_count: count,
+          learned_features: features,
+          avg_consecutive_rises: features.avgConsecutiveRises,
+          avg_5_day_change: features.avg5DayChange,
+          avg_limit_up_ratio: features.avgLimitUpRatio,
+          avg_volume_ratio: features.avgVolumeRatio,
+          avg_price_above_cyc: features.avgPriceAboveCYC,
+          avg_macd_golden_cross: features.avgMACDGoldenCross,
+          recommendations,
+          is_applied: false,
+          learning_score: learningScore,
+        });
+
+      if (insertError) {
+        console.error('保存学习记录失败:', insertError);
+      } else {
+        console.log('学习记录已保存到数据库');
+      }
     }
 
     return NextResponse.json({
@@ -157,7 +189,8 @@ export async function POST(request: NextRequest) {
         strategyType,
         analyzedCount: count,
         features,
-        recommendations: generateRecommendations(features, strategyType),
+        recommendations,
+        learningScore,
       },
       message: '分析完成',
     });
@@ -202,4 +235,45 @@ function generateRecommendations(features: FeatureAnalysis, strategyType: string
   }
 
   return recommendations;
+}
+
+/**
+ * 计算学习评分（自我评估）
+ * 评分标准：
+ * 1. 分析股票数量（最多30分）：>=20只得30分，>=10只得20分，>=5只得10分
+ * 2. 特征显著性（最多40分）：共同特征数量多、数值显著
+ * 3. 优化建议合理性（最多30分）：建议数量多、针对性强
+ */
+function calculateLearningScore(features: FeatureAnalysis, stockCount: number): number {
+  let score = 0;
+  
+  // 1. 分析股票数量（最多30分）
+  if (stockCount >= 20) {
+    score += 30;
+  } else if (stockCount >= 10) {
+    score += 20;
+  } else if (stockCount >= 5) {
+    score += 10;
+  }
+  
+  // 2. 特征显著性（最多40分）
+  const featureScore = features.commonFeatures.length * 5; // 每个共同特征5分，最多30分
+  score += Math.min(featureScore, 30);
+  
+  // 特征数值加分
+  if (features.avgLimitUpRatio > 0.7) score += 5;
+  if (features.avgVolumeRatio > 3) score += 5;
+  
+  // 3. 学习可信度（最多20分）
+  // 如果平均连涨天数、5日涨幅、成交量都有明显特征，说明学习可信度高
+  const strongFeatures = [
+    features.avgConsecutiveRises > 2,
+    features.avg5DayChange > 5,
+    features.avgVolumeRatio > 2,
+    features.avgLimitUpRatio > 0.5,
+  ].filter(Boolean).length;
+  
+  score += strongFeatures * 5; // 每个强特征5分，最多20分
+  
+  return Math.min(score, 100);
 }

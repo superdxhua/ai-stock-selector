@@ -39,6 +39,10 @@ export enum AutoTaskType {
   BULL_ANALYSIS_MORNING = 'BULL_ANALYSIS_MORNING', // 10:00
   BULL_ANALYSIS_AFTERNOON = 'BULL_ANALYSIS_AFTERNOON', // 14:00
 
+  // 同花顺策略学习任务
+  TONGHUASHUN_LEARN_5DAY_TREND = 'TONGHUASHUN_LEARN_5DAY_TREND', // 15:40 - 学习5日趋势策略
+  TONGHUASHUN_LEARN_5DAY_VOLUME = 'TONGHUASHUN_LEARN_5DAY_VOLUME', // 15:41 - 学习5日容量策略
+
   // 跟踪初始化任务（已实现）
   TRACKING_INIT = 'TRACKING_INIT', // 9:30
 
@@ -149,6 +153,20 @@ const taskConfigs: Record<AutoTaskType, {
     description: '15:35 批量生成经验',
     handler: generateBatchExperiences,
   },
+
+  // 同花顺策略学习任务
+  [AutoTaskType.TONGHUASHUN_LEARN_5DAY_TREND]: {
+    cron: '40 15 * * 1-5',
+    name: '同花顺5日趋势学习',
+    description: '15:40 学习同花顺5日趋势策略',
+    handler: () => executeTonghuashunLearning('5day-trend'),
+  },
+  [AutoTaskType.TONGHUASHUN_LEARN_5DAY_VOLUME]: {
+    cron: '41 15 * * 1-5',
+    name: '同花顺5日容量学习',
+    description: '15:41 学习同花顺5日容量策略',
+    handler: () => executeTonghuashunLearning('5day-volume'),
+  },
 };
 
 /**
@@ -212,6 +230,52 @@ async function executeVerificationTask(): Promise<any> {
     }
   } catch (error) {
     console.error(`  ✗ 验证失败:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '执行失败',
+    };
+  }
+}
+
+/**
+ * 执行同花顺策略学习任务
+ */
+async function executeTonghuashunLearning(strategyType: '5day-trend' | '5day-volume'): Promise<any> {
+  const strategyName = strategyType === '5day-trend' ? '5日趋势' : '5日容量';
+  console.log(`🎓 执行同花顺${strategyName}策略学习`);
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+
+  try {
+    const response = await fetch(`${baseUrl}/api/tonghuashun/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ strategyType }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      console.log(`  ✓ 学习完成，分析了 ${result.data.analyzedCount} 只股票`);
+      console.log(`  - 学习评分: ${result.data.learningScore}分`);
+      console.log(`  - 共同特征: ${result.data.features.commonFeatures.join(', ') || '无'}`);
+      console.log(`  - 优化建议: ${result.data.recommendations.length} 条`);
+      return {
+        success: true,
+        analyzedCount: result.data.analyzedCount,
+        learningScore: result.data.learningScore,
+      };
+    } else {
+      console.error(`  ✗ 学习失败:`, result.error);
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+  } catch (error) {
+    console.error(`  ✗ 学习失败:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : '执行失败',
