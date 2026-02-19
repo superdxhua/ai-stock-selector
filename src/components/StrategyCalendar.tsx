@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Calendar, Flame, BarChart3, Crown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Flame, BarChart3, Crown, Lock } from "lucide-react";
 
 interface CalendarDay {
   date: string;
@@ -18,10 +18,46 @@ export default function StrategyCalendar({ strategy }: { strategy: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedStocks, setSelectedStocks] = useState<any[]>([]);
+  const [membershipStatus, setMembershipStatus] = useState<{ canViewStrategy: boolean } | null>(null);
 
   useEffect(() => {
     fetchCalendarData();
+    checkMembershipStatus();
   }, [strategy, currentDate]);
+
+  const checkMembershipStatus = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      
+      if (!userId) {
+        setMembershipStatus({ canViewStrategy: false });
+        return;
+      }
+
+      const response = await fetch("/api/user/membership", {
+        headers: { "x-user-id": userId },
+      });
+      const result = await response.json();
+      if (result.success) {
+        setMembershipStatus(result.data);
+      } else {
+        setMembershipStatus({ canViewStrategy: false });
+      }
+    } catch (error) {
+      console.error("获取会员状态失败:", error);
+      setMembershipStatus({ canViewStrategy: false });
+    }
+  };
+
+  // 马赛克函数：完全屏蔽股票信息
+  const maskStockInfo = (code: string, name: string) => {
+    if (membershipStatus?.canViewStrategy) {
+      return { code, name };
+    }
+    const maskedCode = '******';
+    const maskedName = '******';
+    return { code: maskedCode, name: maskedName };
+  };
 
   const fetchCalendarData = async () => {
     setIsLoading(true);
@@ -188,40 +224,48 @@ export default function StrategyCalendar({ strategy }: { strategy: string }) {
             {selectedDate} 入选股票 ({selectedStocks.length}只)
           </h4>
           <div className="space-y-2">
-            {selectedStocks.map((stock) => (
-              <div
-                key={stock.id}
-                className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="font-medium">{stock.stock_name}</span>
-                  <span className="text-sm text-muted-foreground">{stock.stock_code}</span>
+            {selectedStocks.map((stock) => {
+              const { code: displayCode, name: displayName } = maskStockInfo(stock.stock_code, stock.stock_name);
+              const isMasked = !membershipStatus?.canViewStrategy;
+              
+              return (
+                <div
+                  key={stock.id}
+                  className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium flex items-center gap-2">
+                      {displayName}
+                      {isMasked && <Lock className="w-3 h-3 text-slate-400" />}
+                    </span>
+                    <span className="text-sm text-muted-foreground font-mono">{displayCode}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Badge
+                      variant={
+                        stock.score >= 85
+                          ? "destructive"
+                          : stock.score >= 70
+                          ? "default"
+                          : "secondary"
+                      }
+                      className={
+                        stock.score >= 85
+                          ? "bg-red-100 text-red-700"
+                          : stock.score >= 70
+                          ? "bg-orange-100 text-orange-700"
+                          : ""
+                      }
+                    >
+                      评分: {stock.score}
+                    </Badge>
+                    <span className="text-sm font-mono">
+                      {Number(stock.price).toFixed(2)}元
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <Badge
-                    variant={
-                      stock.score >= 85
-                        ? "destructive"
-                        : stock.score >= 70
-                        ? "default"
-                        : "secondary"
-                    }
-                    className={
-                      stock.score >= 85
-                        ? "bg-red-100 text-red-700"
-                        : stock.score >= 70
-                        ? "bg-orange-100 text-orange-700"
-                        : ""
-                    }
-                  >
-                    评分: {stock.score}
-                  </Badge>
-                  <span className="text-sm font-mono">
-                    {Number(stock.price).toFixed(2)}元
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       )}

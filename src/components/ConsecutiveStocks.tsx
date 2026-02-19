@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Flame, TrendingUp, Clock, Crown } from "lucide-react";
+import { Loader2, Flame, TrendingUp, Clock, Crown, Lock } from "lucide-react";
 
 interface ConsecutiveStock {
   stockCode: string;
@@ -18,10 +18,46 @@ interface ConsecutiveStock {
 export default function ConsecutiveStocks({ strategy }: { strategy: string }) {
   const [stocks, setStocks] = useState<ConsecutiveStock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [membershipStatus, setMembershipStatus] = useState<{ canViewStrategy: boolean } | null>(null);
 
   useEffect(() => {
     fetchConsecutiveStocks();
+    checkMembershipStatus();
   }, [strategy]);
+
+  const checkMembershipStatus = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      
+      if (!userId) {
+        setMembershipStatus({ canViewStrategy: false });
+        return;
+      }
+
+      const response = await fetch("/api/user/membership", {
+        headers: { "x-user-id": userId },
+      });
+      const result = await response.json();
+      if (result.success) {
+        setMembershipStatus(result.data);
+      } else {
+        setMembershipStatus({ canViewStrategy: false });
+      }
+    } catch (error) {
+      console.error("获取会员状态失败:", error);
+      setMembershipStatus({ canViewStrategy: false });
+    }
+  };
+
+  // 马赛克函数：完全屏蔽股票信息
+  const maskStockInfo = (code: string, name: string) => {
+    if (membershipStatus?.canViewStrategy) {
+      return { code, name };
+    }
+    const maskedCode = '******';
+    const maskedName = '******';
+    return { code: maskedCode, name: maskedName };
+  };
 
   const fetchConsecutiveStocks = async () => {
     setIsLoading(true);
@@ -63,7 +99,20 @@ export default function ConsecutiveStocks({ strategy }: { strategy: string }) {
         连续上榜追踪
       </h3>
 
-      {stocks.length === 0 ? (
+      {membershipStatus !== null && !membershipStatus.canViewStrategy && (
+        <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+          <div className="flex items-center gap-2 text-orange-700 dark:text-orange-400 text-sm">
+            <Lock className="w-4 h-4" />
+            <span>请订阅会员以查看完整的股票信息</span>
+          </div>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : stocks.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           暂无连续上榜数据
         </div>
@@ -71,41 +120,49 @@ export default function ConsecutiveStocks({ strategy }: { strategy: string }) {
         <div className="space-y-3">
           {stocks
             .filter((s) => s.currentStreakDays >= 2)
-            .map((stock) => (
-              <div
-                key={stock.stockCode}
-                className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    {strategy === "5day-trend" ? (
-                      <Flame className="w-5 h-5 text-red-600" />
-                    ) : strategy === "leader" ? (
-                      <Crown className="w-5 h-5 text-yellow-600" />
-                    ) : (
-                      <TrendingUp className="w-5 h-5 text-purple-600" />
-                    )}
-                    <div>
-                      <div className="font-medium">{stock.stockName}</div>
-                      <div className="text-sm text-muted-foreground">{stock.stockCode}</div>
+            .map((stock) => {
+              const { code: displayCode, name: displayName } = maskStockInfo(stock.stockCode, stock.stockName);
+              const isMasked = !membershipStatus?.canViewStrategy;
+              
+              return (
+                <div
+                  key={stock.stockCode}
+                  className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      {strategy === "5day-trend" ? (
+                        <Flame className="w-5 h-5 text-red-600" />
+                      ) : strategy === "leader" ? (
+                        <Crown className="w-5 h-5 text-yellow-600" />
+                      ) : (
+                        <TrendingUp className="w-5 h-5 text-purple-600" />
+                      )}
+                      <div>
+                        <div className="font-medium flex items-center gap-2">
+                          {displayName}
+                          {isMasked && <Lock className="w-3 h-3 text-slate-400" />}
+                        </div>
+                        <div className="text-sm text-muted-foreground font-mono">{displayCode}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Badge className={getStreakColor(stock.currentStreakDays)}>
+                      连续 {stock.currentStreakDays} 天
+                    </Badge>
+                    <div className="text-right">
+                      <div className="text-sm font-mono">
+                        评分: {stock.score}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        最高: {stock.maxConsecutiveDays}天
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <Badge className={getStreakColor(stock.currentStreakDays)}>
-                    连续 {stock.currentStreakDays} 天
-                  </Badge>
-                  <div className="text-right">
-                    <div className="text-sm font-mono">
-                      评分: {stock.score}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      最高: {stock.maxConsecutiveDays}天
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
         </div>
       )}
     </Card>
