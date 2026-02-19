@@ -569,7 +569,7 @@ export default function StockList() {
                           <TrendingDown className="w-4 h-4" />
                         )}
                         {stock.change >= 0 ? "+" : ""}
-                        {stock.change.toFixed(2)}
+                        {isMasked ? '******' : stock.change.toFixed(2)}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
