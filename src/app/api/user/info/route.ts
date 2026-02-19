@@ -1,26 +1,34 @@
 /**
- * 获取用户信息API（积分、会员、签到信息）
+ * 用户信息API
+ * 
+ * 功能：
+ * 1. 获取用户角色
+ * 2. 获取用户会员状态
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserPoints, getUserMembership, getUserCheckInInfo } from '@/lib/membership-system';
+import { checkUserRole, checkMembershipStatus } from '@/lib/subscription-system';
 
+/**
+ * GET /api/user/info
+ * 
+ * 获取用户完整信息（角色+会员状态）
+ */
 export async function GET(request: NextRequest) {
   try {
     const userId = request.headers.get('x-user-id') || 'demo-user-id';
     
-    const [points, membership, checkInInfo] = await Promise.all([
-      getUserPoints(userId),
-      getUserMembership(userId),
-      getUserCheckInInfo(userId),
+    const [role, membership] = await Promise.all([
+      checkUserRole(userId),
+      checkMembershipStatus(userId),
     ]);
     
     return NextResponse.json({
       success: true,
       data: {
-        points,
+        role: role.role,
+        isAdmin: role.isAdmin,
         membership,
-        checkInInfo,
       },
     });
   } catch (error) {

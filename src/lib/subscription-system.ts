@@ -6,6 +6,7 @@
  * 2. 新用户自动激活7天试用期
  * 3. 会员状态检查
  * 4. 会员激活
+ * 5. 用户角色检查
  */
 
 import { getSupabaseClient } from '@/storage/database/supabase-client';
@@ -250,4 +251,49 @@ export async function activateMembership(
   if (recordError) {
     console.error('记录会员开通记录失败:', recordError);
   }
+}
+
+// ========================================
+// 用户角色检查
+// ========================================
+
+export interface UserRole {
+  isAdmin: boolean;
+  role: string;
+}
+
+/**
+ * 检查用户角色
+ */
+export async function checkUserRole(userId: string): Promise<UserRole> {
+  const client = getSupabaseClient();
+  
+  const { data: user, error } = await client
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+  
+  if (error || !user) {
+    // 默认返回普通用户
+    return {
+      isAdmin: false,
+      role: 'user',
+    };
+  }
+  
+  const isAdmin = user.role === 'admin';
+  
+  return {
+    isAdmin,
+    role: user.role || 'user',
+  };
+}
+
+/**
+ * 检查用户是否为管理员
+ */
+export async function isAdminUser(userId: string): Promise<boolean> {
+  const role = await checkUserRole(userId);
+  return role.isAdmin;
 }

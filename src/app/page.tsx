@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ChatInterface from "@/components/ChatInterface";
 import StockList from "@/components/StockList";
 import BullStockAnalysis from "@/components/BullStockAnalysis";
@@ -13,6 +13,28 @@ import AdminOrdersPage from "@/components/AdminOrdersPage";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"chat" | "stocks" | "bull" | "scheduler" | "tracking" | "experience" | "tonghuashun" | "subscription" | "admin">("chat");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // 加载用户角色
+  useEffect(() => {
+    checkUserRole();
+  }, []);
+
+  const checkUserRole = async () => {
+    try {
+      const response = await fetch("/api/user/info", {
+        headers: {
+          "x-user-id": "demo-user-id",
+        },
+      });
+      const result = await response.json();
+      if (result.success) {
+        setIsAdmin(result.data.isAdmin);
+      }
+    } catch (error) {
+      console.error("获取用户角色失败:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
@@ -44,16 +66,18 @@ export default function Home() {
               >
                 📊 策略
               </button>
-              <button
-                onClick={() => setActiveTab("tonghuashun")}
-                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
-                  activeTab === "tonghuashun"
-                    ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                }`}
-              >
-                🌸 同花顺
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveTab("tonghuashun")}
+                  className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+                    activeTab === "tonghuashun"
+                      ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  🌸 同花顺
+                </button>
+              )}
               <button
                 onClick={() => setActiveTab("bull")}
                 className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
