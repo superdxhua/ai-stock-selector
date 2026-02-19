@@ -69,7 +69,11 @@ function StrategyPanel({
   };
 
   const fetchStockName = async (code: string) => {
-    if (code.length !== 6) return;
+    if (code.length !== 6) {
+      // 如果长度不是6，清空名称
+      setFormData(prev => ({ ...prev, name: "" }));
+      return;
+    }
 
     setFetchingName(true);
     try {
@@ -304,13 +308,17 @@ function StrategyPanel({
                 }}
                 onChange={(e) => {
                   const newCode = e.target.value;
-                  setFormData(prev => ({ ...prev, code: newCode }));
+                  const shouldClearName = newCode.length < 6 && formData.name !== "";
+                  
+                  if (shouldClearName) {
+                    setFormData(prev => ({ code: newCode, name: "" }));
+                  } else {
+                    setFormData(prev => ({ ...prev, code: newCode }));
+                  }
+                  
                   // 只有当输入长度为6时才获取股票名称
                   if (newCode.length === 6) {
                     fetchStockName(newCode);
-                  } else if (newCode.length < 6) {
-                    // 如果输入不足6位，清空名称
-                    setFormData(prev => ({ ...prev, name: "" }));
                   }
                 }}
                 value={formData.code}
@@ -362,13 +370,17 @@ function StrategyPanel({
                         value={formData.code}
                         onChange={(e) => {
                           const newCode = e.target.value;
-                          setFormData(prev => ({ ...prev, code: newCode }));
+                          const shouldClearName = newCode.length < 6 && formData.name !== "";
+                          
+                          if (shouldClearName) {
+                            setFormData(prev => ({ code: newCode, name: "" }));
+                          } else {
+                            setFormData(prev => ({ ...prev, code: newCode }));
+                          }
+                          
                           // 只有当输入长度为6时才获取股票名称
                           if (newCode.length === 6) {
                             fetchStockName(newCode);
-                          } else if (newCode.length < 6) {
-                            // 如果输入不足6位，清空名称
-                            setFormData(prev => ({ ...prev, name: "" }));
                           }
                         }}
                         required
