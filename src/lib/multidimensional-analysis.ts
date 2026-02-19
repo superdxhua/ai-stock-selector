@@ -274,8 +274,9 @@ export async function analyzeMultiDimensionalFactors(stocks: any[], klinesMap: M
       const capitalFlow = await getCapitalFlowFactor(code);
       const fundamentalMetrics = await getFundamentalMetricsFactor(code);
       const industryFactors = await getIndustryFactorsFactor(code);
-      const advancedIndicators = klinesMap.get(code) ? 
-        await getAdvancedIndicatorsFactor(klinesMap.get(code)) : null;
+      const klines = klinesMap.get(code);
+      const advancedIndicators = klines ? 
+        await getAdvancedIndicatorsFactor(klines) : null;
 
       results[code] = {
         market_sentiment: marketSentiment,

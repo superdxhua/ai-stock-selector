@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取政策指引数据
-    const policyGuidance = await getPolicyGuidanceData(code, industry);
+    const policyGuidance = await getPolicyGuidanceData(code, industry || undefined);
 
     return NextResponse.json({
       success: true,

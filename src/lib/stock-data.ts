@@ -204,6 +204,22 @@ export async function getKLineData(
 }
 
 /**
+ * 获取单只股票的实时数据
+ * @param stockCode 股票代码
+ * @returns 股票基本信息
+ */
+export async function getStockRealTimeData(stockCode: string): Promise<StockBasicInfo | null> {
+  try {
+    const data = await getStockList();
+    const stock = data.find((s: StockBasicInfo) => s.f12 === stockCode);
+    return stock || null;
+  } catch (error) {
+    console.error('获取实时数据失败:', error);
+    return null;
+  }
+}
+
+/**
  * 格式化股票数据
  */
 export function formatStockData(stock: StockBasicInfo) {

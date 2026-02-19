@@ -7,9 +7,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getStockRealTimeData } from '@/lib/stock-data';
 
 const supabase = getSupabaseClient();
-import { getStockRealTimeData } from '@/lib/stock-data-source';
 
 /**
  * POST /api/tracking/verify - 执行跟踪验证
@@ -49,14 +49,14 @@ export async function POST(request: NextRequest) {
         if (stockData) {
           // 计算最终收益
           const trackingStartPrice = parseFloat(record.tracking_start_price);
-          const finalPrice = stockData.price;
+          const finalPrice = stockData.f2;
           const finalChangePercent = ((finalPrice - trackingStartPrice) / trackingStartPrice) * 100;
 
           const { error: updateError } = await supabase
             .from('stock_tracking')
             .update({
-              final_price: stockData.price,
-              final_change_percent: stockData.changePercent,
+              final_price: stockData.f2,
+              final_change_percent: stockData.f3,
               final_total_change: finalChangePercent,
               final_date: new Date().toISOString().split('T')[0],
               is_completed: true,

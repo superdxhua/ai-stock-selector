@@ -12,6 +12,7 @@
  */
 
 import cron from 'node-cron';
+import type { ScheduledTask } from 'node-cron';
 import { executeAllStrategies } from '@/lib/strategy-executor';
 import { executeBullAnalysis } from '@/lib/bull-auto-analysis';
 import { initializeTrackingTasks } from '@/lib/tracking-tasks';
@@ -284,7 +285,7 @@ async function executeTonghuashunLearning(strategyType: '5day-trend' | '5day-vol
 }
 
 // 存储所有定时任务
-const scheduledTasks = new Map<AutoTaskType, cron.ScheduledTask>();
+const scheduledTasks = new Map<AutoTaskType, ScheduledTask>();
 
 /**
  * 初始化所有自动任务
@@ -301,7 +302,6 @@ export function initializeAllAutoTasks(): void {
       const task = cron.schedule(config.cron, async () => {
         await runTask(type);
       }, {
-        scheduled: false, // 等待手动启动
         timezone: 'Asia/Shanghai',
       });
 

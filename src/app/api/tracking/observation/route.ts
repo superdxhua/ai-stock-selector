@@ -8,17 +8,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getStockRealTimeData } from '@/lib/stock-data';
 
 const supabase = getSupabaseClient();
-import { getStockRealTimeData } from '@/lib/stock-data-source';
 
 /**
  * POST /api/tracking/observation - 执行跟踪观察
  */
 export async function POST(request: NextRequest) {
+  let observationType = 'T1';
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'T1';
+    observationType = type;
 
     console.log(`📊 开始执行${type}观察任务`);
 
@@ -53,10 +55,10 @@ export async function POST(request: NextRequest) {
             const { error: updateError } = await supabase
               .from('stock_tracking')
               .update({
-                t1_price: stockData.price,
-                t1_change_percent: stockData.changePercent,
-                t1_volume: stockData.volume,
-                t1_turnover: stockData.turnover,
+                t1_price: stockData.f2,
+                t1_change_percent: stockData.f3,
+                t1_volume: stockData.f5 * 100,
+                t1_turnover: stockData.f18,
                 t1_date: new Date().toISOString().split('T')[0],
               })
               .eq('id', record.id);
@@ -98,7 +100,7 @@ export async function POST(request: NextRequest) {
           if (stockData) {
             // 计算评估结果
             const trackingStartPrice = parseFloat(record.tracking_start_price);
-            const t3Price = stockData.price;
+            const t3Price = stockData.f2;
             const changePercent = ((t3Price - trackingStartPrice) / trackingStartPrice) * 100;
 
             const evaluation = changePercent >= 5 ? 'success' : changePercent >= 0 ? 'hold' : 'failed';
@@ -106,10 +108,10 @@ export async function POST(request: NextRequest) {
             const { error: updateError } = await supabase
               .from('stock_tracking')
               .update({
-                t3_price: stockData.price,
-                t3_change_percent: stockData.changePercent,
-                t3_volume: stockData.volume,
-                t3_turnover: stockData.turnover,
+                t3_price: stockData.f2,
+                t3_change_percent: stockData.f3,
+                t3_volume: stockData.f5 * 100,
+                t3_turnover: stockData.f18,
                 t3_date: new Date().toISOString().split('T')[0],
                 t3_total_change: changePercent,
                 evaluation: evaluation,
@@ -135,11 +137,11 @@ export async function POST(request: NextRequest) {
       message: `${type}观察完成`,
     });
   } catch (error) {
-    console.error(`${type}观察失败:`, error);
+    console.error(`${observationType}观察失败:`, error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : `${type}观察失败`,
+        error: error instanceof Error ? error.message : `${observationType}观察失败`,
       },
       { status: 500 }
     );

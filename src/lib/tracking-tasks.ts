@@ -281,3 +281,7 @@ function evaluateResult(
   // 否则失败
   return 'failed';
 }
+
+// 别名导出，兼容旧代码
+export { executeTrackingInitTask as initializeTrackingTasks };
+
