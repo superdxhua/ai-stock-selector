@@ -44,6 +44,9 @@ function StrategyPanel({
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [expanded, setExpanded] = useState(true);
+  const [chenAnalyzing, setChenAnalyzing] = useState(false);
+  const [showChenAnalysis, setShowChenAnalysis] = useState(false);
+  const [chenAnalysisResult, setChenAnalysisResult] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     code: "",
@@ -224,6 +227,32 @@ function StrategyPanel({
     }
   };
 
+  const analyzeChenXiaoqunStrategy = async () => {
+    setChenAnalyzing(true);
+    try {
+      const response = await fetch("/api/chen-xiaoqun/batch-analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ strategyType }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setChenAnalysisResult(result.data);
+        setShowChenAnalysis(true);
+        alert("陈小群策略分析完成！请查看分析结果");
+      } else {
+        alert(result.error);
+      }
+    } catch (error) {
+      console.error("陈小群策略分析失败:", error);
+      alert("陈小群策略分析失败");
+    } finally {
+      setChenAnalyzing(false);
+    }
+  };
+
   useEffect(() => {
     loadStocks();
   }, []);
@@ -255,6 +284,18 @@ function StrategyPanel({
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${analyzing ? "animate-spin" : ""}`} />
               分析
+            </Button>
+            <Button
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                analyzeChenXiaoqunStrategy();
+              }}
+              disabled={chenAnalyzing}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+            >
+              <TrendingUp className={`w-4 h-4 mr-2 ${chenAnalyzing ? "animate-spin" : ""}`} />
+              陈小群分析
             </Button>
             {expanded ? (
               <ChevronUp className="w-5 h-5" onClick={(e) => { e.stopPropagation(); setExpanded(false); }} />
@@ -370,6 +411,121 @@ function StrategyPanel({
                         <div className="text-sm text-slate-700 dark:text-slate-300">
                           <span className="font-semibold">分析概览：</span>
                           已分析 {analysisResult.multiDimensional.analyzedCount} 只股票，涵盖市场情绪、政策指引、资金流向、基本面、行业因素和技术指标等6个维度
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 陈小群策略分析结果 */}
+                {showChenAnalysis && chenAnalysisResult && (
+                  <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-200 dark:border-purple-800">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-purple-900 dark:text-purple-100">
+                          🎯 陈小群策略分析
+                        </CardTitle>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowChenAnalysis(false)}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                      <CardDescription className="text-purple-700 dark:text-purple-300">
+                        基于游资大佬陈小群的选股逻辑分析
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* 统计概览 */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border text-center">
+                          <div className="text-2xl font-bold text-purple-600">{chenAnalysisResult.statistics.dragonHeadCount}</div>
+                          <div className="text-xs text-slate-600 dark:text-slate-400">龙头股</div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border text-center">
+                          <div className="text-2xl font-bold text-pink-600">{chenAnalysisResult.statistics.monsterStockCount}</div>
+                          <div className="text-xs text-slate-600 dark:text-slate-400">妖股</div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border text-center">
+                          <div className="text-2xl font-bold text-orange-600">{chenAnalysisResult.statistics.highScoreCount}</div>
+                          <div className="text-xs text-slate-600 dark:text-slate-400">高分股</div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border text-center">
+                          <div className="text-2xl font-bold text-green-600">{chenAnalysisResult.statistics.avgScore}</div>
+                          <div className="text-xs text-slate-600 dark:text-slate-400">平均评分</div>
+                        </div>
+                      </div>
+
+                      {/* 陈小群策略建议 */}
+                      {chenAnalysisResult.recommendations && chenAnalysisResult.recommendations.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold mb-2 text-purple-900 dark:text-purple-100">陈小群策略建议</h4>
+                          <ul className="space-y-2 text-sm">
+                            {chenAnalysisResult.recommendations.map((rec: string, index: number) => (
+                              <li key={index} className="flex items-start gap-2 bg-white dark:bg-slate-800 p-2 rounded">
+                                <span className="text-purple-500 font-bold">•</span>
+                                <span className="text-slate-700 dark:text-slate-300">{rec}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* 股票列表 */}
+                      <div>
+                        <h4 className="font-semibold mb-2 text-purple-900 dark:text-purple-100">股票评分详情</h4>
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {Object.entries(chenAnalysisResult.factors).map(([code, factors]: [string, any]) => (
+                            <div key={code} className="bg-white dark:bg-slate-800 p-3 rounded-lg border">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold">{code}</span>
+                                  {factors.is_dragon_head && (
+                                    <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-xs rounded-full">龙头</span>
+                                  )}
+                                  {factors.is_monster_stock && (
+                                    <span className="px-2 py-0.5 bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200 text-xs rounded-full">妖股</span>
+                                  )}
+                                  {factors.limit_up_strong && (
+                                    <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 text-xs rounded-full">强封</span>
+                                  )}
+                                </div>
+                                <div className={`text-xl font-bold ${factors.overall_score >= 80 ? 'text-green-600' : factors.overall_score >= 60 ? 'text-orange-600' : 'text-slate-600'}`}>
+                                  {factors.overall_score}
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-xs">
+                                <div>
+                                  <div className="text-slate-500">龙头分</div>
+                                  <div className="font-semibold">{factors.dragon_head_score}</div>
+                                </div>
+                                <div>
+                                  <div className="text-slate-500">连板</div>
+                                  <div className="font-semibold">{factors.consecutive_limit_up}天</div>
+                                </div>
+                                <div>
+                                  <div className="text-slate-500">情绪</div>
+                                  <div className="font-semibold">{factors.market_sentiment_cycle}</div>
+                                </div>
+                                <div>
+                                  <div className="text-slate-500">资金</div>
+                                  <div className="font-semibold">{(factors.main_force_flow / 10000).toFixed(1)}亿</div>
+                                </div>
+                                <div>
+                                  <div className="text-slate-500">板块</div>
+                                  <div className="font-semibold">{factors.sector_rotation_position}</div>
+                                </div>
+                                <div>
+                                  <div className="text-slate-500">建议</div>
+                                  <div className={`font-semibold ${factors.action_advice.includes('推荐') ? 'text-green-600' : factors.action_advice.includes('回避') ? 'text-red-600' : 'text-orange-600'}`}>
+                                    {factors.action_advice.substring(0, 4)}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </CardContent>
