@@ -599,7 +599,7 @@ export default function StockList() {
               市值40-700亿
             </Badge>
             <Badge variant="outline" className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
-              成交额≥30万
+              成交额≥5亿
             </Badge>
             {selectedStrategy === 'leader' && (
               <Badge variant="outline" className="bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">
@@ -610,10 +610,6 @@ export default function StockList() {
             <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/30 text-amber-700 border-amber-300 dark:border-amber-800 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
               一字板降低评分
-            </Badge>
-            <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
-              <Zap className="w-3 h-3" />
-              倾向成交额≥30万
             </Badge>
           </div>
         </div>
