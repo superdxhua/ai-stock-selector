@@ -69,10 +69,7 @@ function StrategyPanel({
   };
 
   const fetchStockName = async (code: string) => {
-    if (code.length !== 6) {
-      setFormData(prev => ({ ...prev, name: "" }));
-      return;
-    }
+    if (code.length !== 6) return;
 
     setFetchingName(true);
     try {
@@ -81,9 +78,9 @@ function StrategyPanel({
       const result = await response.json();
       
       if (result.success && result.data) {
-        setFormData(prev => ({ ...prev, code, name: result.data.name }));
+        setFormData(prev => ({ ...prev, name: result.data.name }));
       } else {
-        setFormData(prev => ({ ...prev, code, name: "" }));
+        setFormData(prev => ({ ...prev, name: "" }));
       }
     } catch (error) {
       console.error("获取股票名称失败:", error);
@@ -308,7 +305,13 @@ function StrategyPanel({
                 onChange={(e) => {
                   const newCode = e.target.value;
                   setFormData(prev => ({ ...prev, code: newCode }));
-                  fetchStockName(newCode);
+                  // 只有当输入长度为6时才获取股票名称
+                  if (newCode.length === 6) {
+                    fetchStockName(newCode);
+                  } else if (newCode.length < 6) {
+                    // 如果输入不足6位，清空名称
+                    setFormData(prev => ({ ...prev, name: "" }));
+                  }
                 }}
                 value={formData.code}
               />
@@ -360,7 +363,13 @@ function StrategyPanel({
                         onChange={(e) => {
                           const newCode = e.target.value;
                           setFormData(prev => ({ ...prev, code: newCode }));
-                          fetchStockName(newCode);
+                          // 只有当输入长度为6时才获取股票名称
+                          if (newCode.length === 6) {
+                            fetchStockName(newCode);
+                          } else if (newCode.length < 6) {
+                            // 如果输入不足6位，清空名称
+                            setFormData(prev => ({ ...prev, name: "" }));
+                          }
                         }}
                         required
                       />
