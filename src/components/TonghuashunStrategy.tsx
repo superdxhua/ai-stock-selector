@@ -301,6 +301,81 @@ function StrategyPanel({
                   </div>
                 )}
 
+                {/* 多维度分析结果 */}
+                {analysisResult.multiDimensional && (
+                  <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 border-blue-200 dark:border-blue-800">
+                    <CardHeader>
+                      <CardTitle className="text-blue-900 dark:text-blue-100">
+                        🎯 多维度因子分析
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* 综合评分 */}
+                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                        <h4 className="font-semibold text-indigo-900 dark:text-indigo-100 mb-3">综合评分</h4>
+                        <div className="text-4xl font-bold text-indigo-900 dark:text-indigo-100 text-center py-2">
+                          {analysisResult.multiDimensional.avgScores.overall_score}
+                          <span className="text-lg font-normal text-indigo-700 dark:text-indigo-300">/100</span>
+                        </div>
+                      </div>
+
+                      {/* 各维度评分 */}
+                      <div>
+                        <h4 className="font-semibold mb-3">各维度评分</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border">
+                            <div className="text-sm text-slate-600 dark:text-slate-400">市场情绪</div>
+                            <div className="text-xl font-bold text-rose-500">{analysisResult.multiDimensional.avgScores.market_sentiment_score}</div>
+                          </div>
+                          <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border">
+                            <div className="text-sm text-slate-600 dark:text-slate-400">政策指引</div>
+                            <div className="text-xl font-bold text-amber-500">{analysisResult.multiDimensional.avgScores.policy_guidance_score}</div>
+                          </div>
+                          <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border">
+                            <div className="text-sm text-slate-600 dark:text-slate-400">资金流向</div>
+                            <div className="text-xl font-bold text-green-500">{analysisResult.multiDimensional.avgScores.capital_flow_score}</div>
+                          </div>
+                          <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border">
+                            <div className="text-sm text-slate-600 dark:text-slate-400">基本面</div>
+                            <div className="text-xl font-bold text-blue-500">{analysisResult.multiDimensional.avgScores.fundamental_metrics_score}</div>
+                          </div>
+                          <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border">
+                            <div className="text-sm text-slate-600 dark:text-slate-400">行业因素</div>
+                            <div className="text-xl font-bold text-purple-500">{analysisResult.multiDimensional.avgScores.industry_factors_score}</div>
+                          </div>
+                          <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border">
+                            <div className="text-sm text-slate-600 dark:text-slate-400">技术指标</div>
+                            <div className="text-xl font-bold text-cyan-500">{analysisResult.multiDimensional.avgScores.technical_indicators_score}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 多维度优化建议 */}
+                      {analysisResult.multiDimensional.recommendations && analysisResult.multiDimensional.recommendations.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold mb-2">多维度优化建议</h4>
+                          <ul className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                            {analysisResult.multiDimensional.recommendations.map((rec: string, index: number) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <span className="text-blue-500">•</span>
+                                {rec}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* 分析概览 */}
+                      <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="text-sm text-slate-700 dark:text-slate-300">
+                          <span className="font-semibold">分析概览：</span>
+                          已分析 {analysisResult.multiDimensional.analyzedCount} 只股票，涵盖市场情绪、政策指引、资金流向、基本面、行业因素和技术指标等6个维度
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 <div>
                   <h4 className="font-semibold mb-2">特征统计</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">

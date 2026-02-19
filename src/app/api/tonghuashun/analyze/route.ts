@@ -5,12 +5,14 @@
  * 1. 分析同花顺策略中的股票特征
  * 2. 逆向推导选股逻辑
  * 3. 优化自身策略评分标准
+ * 4. 多维度因子分析（市场情绪、政策、资金、基本面、行业、技术指标）
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getKLineData, getStockList } from '@/lib/stock-data';
 import { performTechnicalAnalysis } from '@/lib/indicators';
+import { performMultiDimensionalLearning } from '@/lib/multidimensional-learning';
 
 interface FeatureAnalysis {
   avgConsecutiveRises: number;
@@ -183,6 +185,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 执行多维度学习分析
+    console.log('开始执行多维度学习分析...');
+    const multiDimensionalResult = await performMultiDimensionalLearning(
+      analyzedStocks.map(s => ({
+        stock_code: s.code,
+        stock_name: s.name,
+      })),
+      strategyType
+    );
+
+    console.log('多维度学习分析完成:', multiDimensionalResult);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -191,6 +205,7 @@ export async function POST(request: NextRequest) {
         features,
         recommendations,
         learningScore,
+        multiDimensional: multiDimensionalResult,
       },
       message: '分析完成',
     });
