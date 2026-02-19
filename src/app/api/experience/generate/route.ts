@@ -9,13 +9,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
-const supabase = getSupabaseClient();
+// 不在模块级别初始化，而是在函数内部初始化
 
 /**
  * POST /api/experience/generate - 生成经验
  */
 export async function POST(request: NextRequest) {
   try {
+    // 在函数内部初始化 Supabase 客户端
+    const supabase = getSupabaseClient();
+
     const body = await request.json();
     const { tracking_id, auto_mode = false } = body;
 
