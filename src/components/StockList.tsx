@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3, Crown, Sparkles, AlertCircle, Zap, Lock } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3, Crown, Sparkles, AlertCircle, Zap, Lock, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import StrategyCalendar from "./StrategyCalendar";
 import ConsecutiveStocks from "./ConsecutiveStocks";
@@ -45,26 +45,72 @@ export default function StockList() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState("5day-trend");
   const [isLoading, setIsLoading] = useState(false);
-  const [membershipStatus, setMembershipStatus] = useState<{ canViewStrategy: boolean; daysLeft: number } | null>(null);
+  const [membershipStatus, setMembershipStatus] = useState<{ canViewStrategy: boolean; daysLeft: number; isTrial?: boolean } | null>(null);
 
   // 加载会员状态
   useEffect(() => {
     checkMembershipStatus();
   }, []);
 
+  // 监听用户登录状态变化
+  useEffect(() => {
+    const handleUserChange = () => {
+      checkMembershipStatus();
+    };
+
+    // 监听 storage 事件（用于跨标签页同步）
+    window.addEventListener('storage', handleUserChange);
+
+    // 监听自定义事件（用于同页面内更新）
+    window.addEventListener('userLoggedIn', handleUserChange);
+    window.addEventListener('userLoggedOut', handleUserChange);
+
+    return () => {
+      window.removeEventListener('storage', handleUserChange);
+      window.removeEventListener('userLoggedIn', handleUserChange);
+      window.removeEventListener('userLoggedOut', handleUserChange);
+    };
+  }, []);
+
   const checkMembershipStatus = async () => {
     try {
+      // 从 localStorage 获取用户ID
+      const userId = localStorage.getItem("userId");
+      
+      if (!userId) {
+        // 如果没有用户ID，设置为非会员状态
+        setMembershipStatus({
+          canViewStrategy: false,
+          daysLeft: 0,
+          isTrial: false,
+        });
+        return;
+      }
+
       const response = await fetch("/api/user/membership", {
         headers: {
-          "x-user-id": "demo-user-id",
+          "x-user-id": userId,
         },
       });
       const result = await response.json();
       if (result.success) {
         setMembershipStatus(result.data);
+      } else {
+        // 接口返回失败，设置为非会员状态
+        setMembershipStatus({
+          canViewStrategy: false,
+          daysLeft: 0,
+          isTrial: false,
+        });
       }
     } catch (error) {
       console.error("获取会员状态失败:", error);
+      // 出错时设置为非会员状态
+      setMembershipStatus({
+        canViewStrategy: false,
+        daysLeft: 0,
+        isTrial: false,
+      });
     }
   };
 
@@ -235,6 +281,39 @@ export default function StockList() {
           AI驱动的多维度选股系统，助您发现优质投资机会
         </p>
       </div>
+
+      {/* 会员状态提示 */}
+      {membershipStatus && (
+        <Alert className={`${
+          membershipStatus.canViewStrategy
+            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 dark:from-green-900/20 dark:to-emerald-900/20 dark:border-green-800'
+            : 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200 dark:from-orange-900/20 dark:to-amber-900/20 dark:border-orange-800'
+        }`}>
+          {membershipStatus.canViewStrategy ? (
+            <>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-700 dark:text-green-400">
+                <span className="font-semibold">
+                  {membershipStatus.isTrial ? '7天免费试用中' : '会员权益有效'}
+                </span>
+                {membershipStatus.daysLeft > 0 && (
+                  <> · 剩余 <strong>{membershipStatus.daysLeft}</strong> 天</>
+                )}
+              </AlertDescription>
+            </>
+          ) : (
+            <>
+              <Lock className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-700 dark:text-orange-400">
+                <span className="font-semibold">请订阅会员</span> 以查看完整的股票信息（代码、名称、价格、成交额、流通值等）
+                <Link href="/subscription" className="ml-2 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 underline font-medium">
+                  立即订阅
+                </Link>
+              </AlertDescription>
+            </>
+          )}
+        </Alert>
+      )}
 
       {/* 策略选择卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

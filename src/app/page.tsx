@@ -167,6 +167,8 @@ export default function Home() {
                       localStorage.removeItem("userId");
                       localStorage.removeItem("userInfo");
                       setUserInfo(null);
+                      // 触发自定义事件，通知其他组件用户已退出
+                      window.dispatchEvent(new Event('userLoggedOut'));
                     }}
                     className="px-2 py-1 text-xs rounded bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                   >

@@ -72,6 +72,10 @@ export default function MobileRegisterPage() {
         if (autoLoginData.success) {
           localStorage.setItem("userId", autoLoginData.data.id);
           localStorage.setItem("userInfo", JSON.stringify(autoLoginData.data));
+          
+          // 触发自定义事件，通知其他组件用户已登录
+          window.dispatchEvent(new Event('userLoggedIn'));
+          
           setShowSuccess(true);
           setTimeout(() => {
             router.push("/");
