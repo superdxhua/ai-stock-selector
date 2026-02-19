@@ -8,9 +8,11 @@ import StockTrackingManager from "@/components/StockTrackingManager";
 import ExperienceLibrary from "@/components/ExperienceLibrary";
 import AutoTaskMonitor from "@/components/AutoTaskMonitor";
 import TonghuashunStrategy from "@/components/TonghuashunStrategy";
+import PaymentPage from "@/components/PaymentPage";
+import AdminOrdersPage from "@/components/AdminOrdersPage";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"chat" | "stocks" | "bull" | "scheduler" | "tracking" | "experience" | "tonghuashun">("chat");
+  const [activeTab, setActiveTab] = useState<"chat" | "stocks" | "bull" | "scheduler" | "tracking" | "experience" | "tonghuashun" | "payment" | "admin">("chat");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
@@ -92,6 +94,26 @@ export default function Home() {
               >
                 🤖 自动任务
               </button>
+              <button
+                onClick={() => setActiveTab("payment")}
+                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+                  activeTab === "payment"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                💎 会员中心
+              </button>
+              <button
+                onClick={() => setActiveTab("admin")}
+                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+                  activeTab === "admin"
+                    ? "bg-gradient-to-r from-slate-600 to-slate-700 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                ⚙️ 订单管理
+              </button>
             </nav>
           </div>
         </div>
@@ -106,6 +128,8 @@ export default function Home() {
         {activeTab === "tracking" && <StockTrackingManager />}
         {activeTab === "experience" && <ExperienceLibrary />}
         {activeTab === "scheduler" && <AutoTaskMonitor />}
+        {activeTab === "payment" && <PaymentPage />}
+        {activeTab === "admin" && <AdminOrdersPage />}
       </main>
     </div>
   );
