@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import ChatInterface from "@/components/ChatInterface";
 import StockList from "@/components/StockList";
 import BullStockAnalysis from "@/components/BullStockAnalysis";
@@ -10,31 +11,11 @@ import AutoTaskMonitor from "@/components/AutoTaskMonitor";
 import TonghuashunStrategy from "@/components/TonghuashunStrategy";
 import SubscriptionPage from "@/components/SubscriptionPage";
 import AdminOrdersPage from "@/components/AdminOrdersPage";
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"chat" | "stocks" | "bull" | "scheduler" | "tracking" | "experience" | "tonghuashun" | "subscription" | "admin">("chat");
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  // 加载用户角色
-  useEffect(() => {
-    checkUserRole();
-  }, []);
-
-  const checkUserRole = async () => {
-    try {
-      const response = await fetch("/api/user/info", {
-        headers: {
-          "x-user-id": "demo-user-id",
-        },
-      });
-      const result = await response.json();
-      if (result.success) {
-        setIsAdmin(result.data.isAdmin);
-      }
-    } catch (error) {
-      console.error("获取用户角色失败:", error);
-    }
-  };
+  const { isAdminLoggedIn, adminUser, logout } = useAdminAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
@@ -66,7 +47,7 @@ export default function Home() {
               >
                 📊 策略
               </button>
-              {isAdmin && (
+              {isAdminLoggedIn && (
                 <button
                   onClick={() => setActiveTab("tonghuashun")}
                   className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
@@ -138,6 +119,21 @@ export default function Home() {
               >
                 ⚙️ 订单管理
               </button>
+              {isAdminLoggedIn ? (
+                <button
+                  onClick={logout}
+                  className="px-3 py-2 rounded-lg font-medium transition-all text-sm bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                >
+                  🚪 登出 ({adminUser?.username})
+                </button>
+              ) : (
+                <Link
+                  href="/admin/login"
+                  className="px-3 py-2 rounded-lg font-medium transition-all text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                >
+                  🔐 管理员登录
+                </Link>
+              )}
             </nav>
           </div>
         </div>
