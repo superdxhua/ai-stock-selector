@@ -613,7 +613,7 @@ export default function StockList() {
             </Badge>
             <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
               <Zap className="w-3 h-3" />
-              倾向成交额≥5亿
+              倾向成交额≥30万
             </Badge>
           </div>
         </div>
