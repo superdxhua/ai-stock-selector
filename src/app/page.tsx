@@ -14,7 +14,7 @@ import AdminOrdersPage from "@/components/AdminOrdersPage";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"chat" | "stocks" | "bull" | "scheduler" | "tracking" | "experience" | "tonghuashun" | "subscription" | "admin">("chat");
+  const [activeTab, setActiveTab] = useState<"chat" | "stocks" | "bull" | "scheduler" | "tracking" | "experience" | "tonghuashun" | "subscription" | "admin">("stocks");
   const { isAdminLoggedIn, adminUser, logout } = useAdminAuth();
 
   return (
@@ -28,16 +28,6 @@ export default function Home() {
             </h1>
             <nav className="flex gap-2">
               <button
-                onClick={() => setActiveTab("chat")}
-                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
-                  activeTab === "chat"
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                }`}
-              >
-                💬 对话
-              </button>
-              <button
                 onClick={() => setActiveTab("stocks")}
                 className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
                   activeTab === "stocks"
@@ -47,18 +37,16 @@ export default function Home() {
               >
                 📊 策略
               </button>
-              {isAdminLoggedIn && (
-                <button
-                  onClick={() => setActiveTab("tonghuashun")}
-                  className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
-                    activeTab === "tonghuashun"
-                      ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                  }`}
-                >
-                  🌸 同花顺
-                </button>
-              )}
+              <button
+                onClick={() => setActiveTab("chat")}
+                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+                  activeTab === "chat"
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                💬 对话
+              </button>
               <button
                 onClick={() => setActiveTab("bull")}
                 className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
@@ -119,6 +107,18 @@ export default function Home() {
               >
                 ⚙️ 订单管理
               </button>
+              {isAdminLoggedIn && (
+                <button
+                  onClick={() => setActiveTab("tonghuashun")}
+                  className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+                    activeTab === "tonghuashun"
+                      ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  🌸 同花顺
+                </button>
+              )}
               {isAdminLoggedIn ? (
                 <button
                   onClick={logout}

@@ -209,7 +209,17 @@ export default function StockList() {
   const showScore = selectedStrategy === "5day-trend" || selectedStrategy === "5day-volume" || selectedStrategy === "leader";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* 页面标题和介绍 */}
+      <div className="text-center py-6">
+        <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+          智能选股策略
+        </h1>
+        <p className="text-base text-slate-600 dark:text-slate-400">
+          AI驱动的多维度选股系统，助您发现优质投资机会
+        </p>
+      </div>
+
       {/* 策略选择卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {strategies.map((strategy) => {
@@ -286,24 +296,28 @@ export default function StockList() {
 
                 {/* 标题和描述 */}
                 <div className="mb-4">
-                  <h3 className={`text-xl font-bold mb-2 ${isSelected ? config.textColor : 'text-slate-800 dark:text-slate-100'}`}>
+                  <h3 className={`text-2xl font-bold mb-2 ${isSelected ? config.textColor : 'text-slate-800 dark:text-slate-100'} flex items-center gap-2`}>
                     {strategy.name}
+                    {isSelected && <span className="w-2 h-2 rounded-full bg-current animate-pulse" />}
                   </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-base text-slate-600 dark:text-slate-400 font-medium">
                     {strategy.description}
                   </p>
                 </div>
 
                 {/* 底部信息 */}
                 <div className="flex items-center justify-between pt-4 border-t border-slate-200/50 dark:border-slate-700/50">
-                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                    <Badge variant="outline" className="text-xs bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
+                  <div className="flex items-center gap-3">
+                    <Badge className={`text-sm border-0 shadow-md bg-gradient-to-r ${config.color} text-white px-3 py-1`}>
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                       {config.scoreText}
                     </Badge>
-                    <span>评分 ≥ 50</span>
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                      评分 ≥ 50
+                    </span>
                   </div>
                   {isSelected && (
-                    <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${config.color} animate-pulse shadow-lg`} />
+                    <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${config.color} animate-pulse shadow-lg ring-2 ring-offset-2 ring-current`} />
                   )}
                 </div>
               </div>
@@ -334,16 +348,16 @@ export default function StockList() {
                 
                 {/* 标题信息 */}
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-2">
                     {currentStrategy?.name}
-                    <Badge variant="secondary" className="text-xs shadow-md">
-                      {stocks.length} 只
+                    <Badge variant="secondary" className="text-xs shadow-md bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-500/30">
+                      {stocks.length} 只股票
                     </Badge>
                   </h2>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {selectedStrategy === '5day-trend' && '短期强势上涨股筛选'}
-                    {selectedStrategy === '5day-volume' && '成交量活跃股筛选'}
-                    {selectedStrategy === 'leader' && '每天精选3只最优质龙头'}
+                  <p className="text-base text-slate-600 dark:text-slate-400 mt-1">
+                    {selectedStrategy === '5day-trend' && '🚀 短期强势上涨股筛选'}
+                    {selectedStrategy === '5day-volume' && '📊 成交量活跃股筛选'}
+                    {selectedStrategy === 'leader' && '👑 每天精选3只最优质龙头'}
                   </p>
                 </div>
               </div>
@@ -608,7 +622,7 @@ export default function StockList() {
       {/* 历史记录和连续涨停 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <StrategyCalendar strategy={selectedStrategy} />
-        <ConsecutiveStocks />
+        <ConsecutiveStocks strategy={selectedStrategy} />
       </div>
 
       <style jsx>{`
