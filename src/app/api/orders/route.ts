@@ -1,15 +1,14 @@
 /**
- * 订单管理API
+ * 订单管理API（简化版）
  * 
  * 功能：
- * 1. 创建订单
- * 2. 查询订单
- * 3. 审核订单（管理员）
+ * 1. 创建订单（仅扫码支付）
+ * 2. 审核订单（管理员）
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
-import { getMembershipPackage, activateMembership, deductPoints } from '@/lib/membership-system';
+import { getMembershipPackage, activateMembership } from '@/lib/subscription-system';
 
 /**
  * 生成订单号
@@ -21,9 +20,9 @@ function generateOrderNo(): string {
 }
 
 /**
- * POST /api/orders/create
+ * POST /api/orders
  * 
- * 创建订单
+ * 创建订单（仅扫码支付）
  * 请求体: { packageId, paymentMethod }
  */
 export async function POST(request: NextRequest) {
@@ -48,6 +47,14 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
+    // 只支持扫码支付
+    if (paymentMethod !== 'wechat' && paymentMethod !== 'alipay') {
+      return NextResponse.json({
+        success: false,
+        error: '只支持微信和支付宝扫码支付',
+      }, { status: 400 });
+    }
+    
     // 获取套餐信息
     const pkg = await getMembershipPackage(packageId);
     
@@ -58,80 +65,21 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
     
-    const client = getSupabaseClient();
-    
-    // 如果是积分支付
-    if (paymentMethod === 'points') {
-      if (!pkg.pointsCost) {
-        return NextResponse.json({
-          success: false,
-          error: '该套餐不支持积分兑换',
-        }, { status: 400 });
-      }
-      
-      try {
-        // 扣除积分
-        await deductPoints(userId, pkg.pointsCost, `兑换会员：${pkg.name}`, {
-          relatedId: userId,
-          recordType: 'consume',
-        });
-        
-        // 创建订单
-        const orderNo = generateOrderNo();
-        const { data: order, error: orderError } = await client
-          .from('orders')
-          .insert({
-            user_id: userId,
-            order_no: orderNo,
-            package_id: pkg.id,
-            package_name: pkg.name,
-            amount: pkg.price,
-            payment_method: 'points',
-            payment_info: {
-              pointsCost: pkg.pointsCost,
-            },
-            status: 'paid',
-            paid_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-        
-        if (orderError) {
-          throw new Error('创建订单失败');
-        }
-        
-        // 激活会员
-        await activateMembership(userId, pkg.id, {
-          source: 'points',
-          orderId: order.id,
-        });
-        
-        return NextResponse.json({
-          success: true,
-          data: {
-            orderId: order.id,
-            orderNo: order.order_no,
-            packageName: order.package_name,
-            amount: order.amount,
-            paymentMethod: order.payment_method,
-            status: order.status,
-          },
-          message: '积分兑换成功',
-        });
-      } catch (error: any) {
-        return NextResponse.json({
-          success: false,
-          error: error.message || '积分兑换失败',
-        }, { status: 400 });
-      }
+    // 试用期套餐不能购买
+    if (pkg.isTrial) {
+      return NextResponse.json({
+        success: false,
+        error: '试用套餐不能购买',
+      }, { status: 400 });
     }
     
-    // 如果是扫码支付（收款吧、旺铺管家等）
-    const orderNo = generateOrderNo();
-    const expireTime = new Date();
-    expireTime.setHours(expireTime.getHours() + 2); // 2小时后过期
+    const client = getSupabaseClient();
     
+    // 计算过期时间（2小时）
+    const expiredAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
+    
+    // 创建订单
+    const orderNo = generateOrderNo();
     const { data: order, error: orderError } = await client
       .from('orders')
       .insert({
@@ -142,41 +90,33 @@ export async function POST(request: NextRequest) {
         amount: pkg.price,
         payment_method: paymentMethod,
         payment_info: {
-          qrCode: `/payment/${paymentMethod}-qr.png`,
-          customerService: '微信：xxx',
+          paymentMethod,
         },
         status: 'pending',
-        expired_at: expireTime.toISOString(),
+        expired_at: expiredAt.toISOString(),
         created_at: new Date().toISOString(),
       })
       .select()
       .single();
     
     if (orderError) {
-      throw new Error('创建订单失败');
+      console.error('创建订单失败:', orderError);
+      return NextResponse.json({
+        success: false,
+        error: '创建订单失败',
+      }, { status: 500 });
     }
     
     return NextResponse.json({
       success: true,
-      data: {
-        orderId: order.id,
-        orderNo: order.order_no,
-        packageName: order.package_name,
-        amount: order.amount,
-        originalPrice: pkg.originalPrice,
-        paymentMethod: order.payment_method,
-        paymentInfo: order.payment_info,
-        status: order.status,
-        expiredAt: order.expired_at,
-      },
-      message: '订单创建成功，请扫码支付',
+      data: order,
+      message: '订单创建成功，请完成支付',
     });
   } catch (error) {
-    console.error('创建订单失败:', error);
+    console.error('创建订单异常:', error);
     return NextResponse.json({
       success: false,
-      error: '创建订单失败',
+      error: '创建订单异常',
     }, { status: 500 });
   }
 }
-

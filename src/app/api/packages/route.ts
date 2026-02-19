@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getMembershipPackages } from '@/lib/membership-system';
+import { getMembershipPackages } from '@/lib/subscription-system';
 
 export async function GET() {
   try {

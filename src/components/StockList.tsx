@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3, Crown, Sparkles, AlertCircle, Zap } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TrendingUp, TrendingDown, Loader2, Flame, BarChart3, Crown, Sparkles, AlertCircle, Zap, Lock } from "lucide-react";
 import Link from "next/link";
 import StrategyCalendar from "./StrategyCalendar";
 import ConsecutiveStocks from "./ConsecutiveStocks";
@@ -44,6 +45,39 @@ export default function StockList() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState("5day-trend");
   const [isLoading, setIsLoading] = useState(false);
+  const [membershipStatus, setMembershipStatus] = useState<{ canViewStrategy: boolean; daysLeft: number } | null>(null);
+
+  // 加载会员状态
+  useEffect(() => {
+    checkMembershipStatus();
+  }, []);
+
+  const checkMembershipStatus = async () => {
+    try {
+      const response = await fetch("/api/user/membership", {
+        headers: {
+          "x-user-id": "demo-user-id",
+        },
+      });
+      const result = await response.json();
+      if (result.success) {
+        setMembershipStatus(result.data);
+      }
+    } catch (error) {
+      console.error("获取会员状态失败:", error);
+    }
+  };
+
+  // 马赛克函数：屏蔽股票代码和名称
+  const maskStockInfo = (code: string, name: string) => {
+    if (membershipStatus?.canViewStrategy) {
+      return { code, name };
+    }
+    // 随机保留部分字符，其他用*代替
+    const maskedCode = code.slice(0, 3) + '***';
+    const maskedName = name.slice(0, 1) + '***';
+    return { code: maskedCode, name: maskedName };
+  };
 
   // 生成模拟股票数据
   const generateMockStocks = (strategy: string): Stock[] => {
@@ -337,6 +371,29 @@ export default function StockList() {
           </div>
         </div>
 
+        {/* 会员状态提示 */}
+        {membershipStatus !== null && !membershipStatus.canViewStrategy && (
+          <Alert className="m-4 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+            <Lock className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-900 dark:text-amber-100">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-semibold">您的试用期已结束，请订阅后查看完整策略</p>
+                  <p className="text-sm mt-1">未订阅用户只能查看策略概览，股票代码和名称已进行隐私保护处理</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-amber-600 text-white hover:bg-amber-700 border-0"
+                  onClick={() => window.location.href = '#payment'}
+                >
+                  立即订阅
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
             <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
@@ -367,20 +424,27 @@ export default function StockList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stocks.map((stock) => (
-                  <TableRow key={stock.code} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors ${stock.technicalAnalysis?.isOneSidedLimitUp ? 'bg-amber-50/30 dark:bg-amber-950/20' : ''}`}>
-                    <TableCell className="font-mono text-sm">{stock.code}</TableCell>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {stock.name}
-                        {stock.technicalAnalysis?.isOneSidedLimitUp && (
-                          <Badge className="bg-amber-100 dark:bg-amber-900/50 text-amber-700 border-amber-500/30 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" />
-                            一字板
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
+                {stocks.map((stock) => {
+                  const { code: displayCode, name: displayName } = maskStockInfo(stock.code, stock.name);
+                  const isMasked = !membershipStatus?.canViewStrategy;
+                  
+                  return (
+                    <TableRow key={stock.code} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors ${stock.technicalAnalysis?.isOneSidedLimitUp ? 'bg-amber-50/30 dark:bg-amber-950/20' : ''}`}>
+                      <TableCell className="font-mono text-sm">{displayCode}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {displayName}
+                          {isMasked && (
+                            <Lock className="w-3 h-3 text-slate-400" />
+                          )}
+                          {stock.technicalAnalysis?.isOneSidedLimitUp && (
+                            <Badge className="bg-amber-100 dark:bg-amber-900/50 text-amber-700 border-amber-500/30 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              一字板
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                     <TableCell className="text-right font-mono font-semibold">
                       {stock.price.toFixed(2)}
                     </TableCell>
@@ -459,12 +523,20 @@ export default function StockList() {
                       </TableCell>
                     )}
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" asChild className="shadow-md hover:shadow-lg transition-shadow">
-                        <Link href={`/stock/${stock.code}`}>详情</Link>
-                      </Button>
+                      {isMasked ? (
+                        <Button variant="outline" size="sm" className="shadow-md hover:shadow-lg transition-shadow" disabled>
+                          <Lock className="w-3 h-3 mr-1" />
+                          详情
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" asChild className="shadow-md hover:shadow-lg transition-shadow">
+                          <Link href={`/stock/${stock.code}`}>详情</Link>
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

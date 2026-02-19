@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
-import { activateMembership } from '@/lib/membership-system';
+import { activateMembership } from '@/lib/subscription-system';
 
 /**
  * 管理员Token验证（简化版）
