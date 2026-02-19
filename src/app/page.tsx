@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import ChatInterface from "@/components/ChatInterface";
 import StockList from "@/components/StockList";
@@ -15,7 +15,20 @@ import { useAdminAuth } from "@/contexts/AdminAuthContext";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"chat" | "stocks" | "bull" | "scheduler" | "tracking" | "experience" | "tonghuashun" | "subscription" | "admin">("stocks");
+  const [userInfo, setUserInfo] = useState<any>(null);
   const { isAdminLoggedIn, adminUser, logout } = useAdminAuth();
+
+  useEffect(() => {
+    // 从 localStorage 读取用户信息
+    const stored = localStorage.getItem("userInfo");
+    if (stored) {
+      try {
+        setUserInfo(JSON.parse(stored));
+      } catch (e) {
+        console.error("解析用户信息失败:", e);
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
@@ -127,12 +140,39 @@ export default function Home() {
                   🚪 登出 ({adminUser?.username})
                 </button>
               ) : (
-                <Link
-                  href="/admin/login"
-                  className="px-3 py-2 rounded-lg font-medium transition-all text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
-                >
-                  🔐 管理员登录
-                </Link>
+                <>
+                  <Link
+                    href="/scan-register"
+                    className="px-3 py-2 rounded-lg font-medium transition-all text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600"
+                  >
+                    📱 扫码注册
+                  </Link>
+                  <Link
+                    href="/admin/login"
+                    className="px-3 py-2 rounded-lg font-medium transition-all text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  >
+                    🔐 管理员
+                  </Link>
+                </>
+              )}
+              
+              {/* 用户信息显示 */}
+              {userInfo && !isAdminLoggedIn && (
+                <div className="flex items-center gap-2 ml-2 pl-4 border-l border-slate-200 dark:border-slate-700">
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    👤 {userInfo.username}
+                  </span>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem("userId");
+                      localStorage.removeItem("userInfo");
+                      setUserInfo(null);
+                    }}
+                    className="px-2 py-1 text-xs rounded bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  >
+                    退出
+                  </button>
+                </div>
               )}
             </nav>
           </div>
