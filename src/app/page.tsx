@@ -39,7 +39,8 @@ export default function Home() {
             <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
               📈 牛股选股智能体
             </h1>
-            <nav className="flex gap-2">
+            <nav className="flex gap-2 flex-wrap">
+              {/* 1. 策略 */}
               <button
                 onClick={() => setActiveTab("stocks")}
                 className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
@@ -50,56 +51,16 @@ export default function Home() {
               >
                 📊 策略
               </button>
-              <button
-                onClick={() => setActiveTab("chat")}
-                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
-                  activeTab === "chat"
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                }`}
+              
+              {/* 2. 扫码注册 - 移到策略后面 */}
+              <Link
+                href="/scan-register"
+                className="px-3 py-2 rounded-lg font-medium transition-all text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600"
               >
-                💬 对话
-              </button>
-              <button
-                onClick={() => setActiveTab("bull")}
-                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
-                  activeTab === "bull"
-                    ? "bg-gradient-to-r from-orange-500 to-red-500 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                }`}
-              >
-                🔥 复盘
-              </button>
-              <button
-                onClick={() => setActiveTab("tracking")}
-                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
-                  activeTab === "tracking"
-                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                }`}
-              >
-                👁️ 跟踪
-              </button>
-              <button
-                onClick={() => setActiveTab("experience")}
-                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
-                  activeTab === "experience"
-                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                }`}
-              >
-                💡 经验
-              </button>
-              <button
-                onClick={() => setActiveTab("scheduler")}
-                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
-                  activeTab === "scheduler"
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                }`}
-              >
-                🤖 自动任务
-              </button>
+                📱 扫码注册
+              </Link>
+              
+              {/* 3. 订阅会员 - 紧邻扫码注册 */}
               <button
                 onClick={() => setActiveTab("subscription")}
                 className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
@@ -110,6 +71,68 @@ export default function Home() {
               >
                 💎 订阅会员
               </button>
+              
+              {/* 4. 对话 */}
+              <button
+                onClick={() => setActiveTab("chat")}
+                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+                  activeTab === "chat"
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                💬 对话
+              </button>
+              
+              {/* 5. 复盘 */}
+              <button
+                onClick={() => setActiveTab("bull")}
+                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+                  activeTab === "bull"
+                    ? "bg-gradient-to-r from-orange-500 to-red-500 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                🔥 复盘
+              </button>
+              
+              {/* 6. 跟踪 */}
+              <button
+                onClick={() => setActiveTab("tracking")}
+                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+                  activeTab === "tracking"
+                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                👁️ 跟踪
+              </button>
+              
+              {/* 7. 经验 */}
+              <button
+                onClick={() => setActiveTab("experience")}
+                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+                  activeTab === "experience"
+                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                💡 经验
+              </button>
+              
+              {/* 8. 自动任务 */}
+              <button
+                onClick={() => setActiveTab("scheduler")}
+                className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+                  activeTab === "scheduler"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                🤖 自动任务
+              </button>
+              
+              {/* 9. 订单管理 */}
               <button
                 onClick={() => setActiveTab("admin")}
                 className={`px-3 py-2 rounded-lg font-medium transition-all text-sm ${
@@ -120,6 +143,8 @@ export default function Home() {
               >
                 ⚙️ 订单管理
               </button>
+              
+              {/* 10. 同花顺 - 仅管理员可见 */}
               {isAdminLoggedIn && (
                 <button
                   onClick={() => setActiveTab("tonghuashun")}
@@ -132,6 +157,8 @@ export default function Home() {
                   🌸 同花顺
                 </button>
               )}
+              
+              {/* 11. 管理员登录/登出 */}
               {isAdminLoggedIn ? (
                 <button
                   onClick={logout}
@@ -140,20 +167,12 @@ export default function Home() {
                   🚪 登出 ({adminUser?.username})
                 </button>
               ) : (
-                <>
-                  <Link
-                    href="/scan-register"
-                    className="px-3 py-2 rounded-lg font-medium transition-all text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600"
-                  >
-                    📱 扫码注册
-                  </Link>
-                  <Link
-                    href="/admin/login"
-                    className="px-3 py-2 rounded-lg font-medium transition-all text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                  >
-                    🔐 管理员
-                  </Link>
-                </>
+                <Link
+                  href="/admin/login"
+                  className="px-3 py-2 rounded-lg font-medium transition-all text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                >
+                  🔐 管理员
+                </Link>
               )}
               
               {/* 用户信息显示 */}
