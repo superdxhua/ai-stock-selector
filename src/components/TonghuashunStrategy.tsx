@@ -482,6 +482,7 @@ function StrategyPanel({
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <span className="font-semibold">{code}</span>
+                                  <span className="text-slate-500 dark:text-slate-400">{factors.stock_name || ''}</span>
                                   {factors.is_dragon_head && (
                                     <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-xs rounded-full">龙头</span>
                                   )}

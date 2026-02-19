@@ -53,6 +53,12 @@ export async function POST(request: NextRequest) {
 
     console.log(`分析完成，成功分析 ${Object.keys(factors).length} 只股票`);
 
+    // 为每个因子添加股票名称
+    const stockNameMap = new Map(tonghuashunStocks.map(s => [s.stock_code, s.stock_name]));
+    Object.keys(factors).forEach(code => {
+      (factors[code] as any).stock_name = stockNameMap.get(code) || '';
+    });
+
     // 统计分析结果
     const analyzedStocks = Object.values(factors);
     const totalStocks = analyzedStocks.length;
