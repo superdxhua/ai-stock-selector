@@ -81,14 +81,19 @@ function StrategyPanel({
       const response = await fetch(`/api/stock/info?code=${code}`);
       const result = await response.json();
       
+      console.log("fetchStockName result", result);
+      
       if (result.success && result.data) {
         setFormData(prev => ({ ...prev, name: result.data.name }));
       } else {
+        console.error("获取股票名称失败:", result);
         setFormData(prev => ({ ...prev, name: "" }));
+        alert("未找到该股票，请检查代码是否正确");
       }
     } catch (error) {
       console.error("获取股票名称失败:", error);
       setFormData(prev => ({ ...prev, name: "" }));
+      alert("获取股票名称失败，请稍后重试");
     } finally {
       setFetchingName(false);
     }
@@ -299,33 +304,47 @@ function StrategyPanel({
           {/* 快捷添加 */}
           {!showAddForm && (
             <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  placeholder="输入6位股票代码（如：600519）自动获取名称..."
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && formData.code && formData.name) {
+                      quickAddStock();
+                    }
+                  }}
+                  onChange={(e) => {
+                    const newCode = e.target.value;
+                    const shouldClearName = newCode.length < 6 && formData.name !== "";
+                    
+                    if (shouldClearName) {
+                      setFormData(prev => ({ code: newCode, name: "" }));
+                    } else {
+                      setFormData(prev => ({ ...prev, code: newCode }));
+                    }
+                    
+                    // 只有当输入长度为6时才获取股票名称
+                    if (newCode.length === 6) {
+                      fetchStockName(newCode);
+                    }
+                  }}
+                  value={formData.code}
+                  disabled={fetchingName}
+                />
+                {fetchingName && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
+                    获取中...
+                  </div>
+                )}
+              </div>
               <Input
-                placeholder="输入6位股票代码（如：600519）自动获取名称..."
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && formData.code && formData.name) {
-                    quickAddStock();
-                  }
-                }}
-                onChange={(e) => {
-                  const newCode = e.target.value;
-                  const shouldClearName = newCode.length < 6 && formData.name !== "";
-                  
-                  if (shouldClearName) {
-                    setFormData(prev => ({ code: newCode, name: "" }));
-                  } else {
-                    setFormData(prev => ({ ...prev, code: newCode }));
-                  }
-                  
-                  // 只有当输入长度为6时才获取股票名称
-                  if (newCode.length === 6) {
-                    fetchStockName(newCode);
-                  }
-                }}
-                value={formData.code}
+                placeholder="股票名称"
+                value={formData.name}
+                disabled
+                className="w-32"
               />
               <Button
                 onClick={quickAddStock}
-                disabled={!formData.code || !formData.name}
+                disabled={!formData.code || !formData.name || fetchingName}
                 className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
