@@ -10,13 +10,17 @@
 
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
-const supabase = getSupabaseClient();
+// 不在模块级别初始化 Supabase 客户端
+// 改为在每个需要使用的函数内部初始化
 
 /**
  * 执行批量经验生成
  */
 export async function generateBatchExperiences(): Promise<any> {
   console.log('💡 开始批量生成经验');
+
+  // 在函数内部初始化 Supabase 客户端
+  const supabase = getSupabaseClient();
 
   let successCount = 0;
   let failureCount = 0;
