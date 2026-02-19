@@ -75,20 +75,30 @@ function StrategyPanel({
       return;
     }
 
+    // 验证是否为纯数字
+    if (!/^\d{6}$/.test(code)) {
+      console.error("股票代码格式不正确:", code);
+      setFormData(prev => ({ ...prev, name: "" }));
+      alert("股票代码必须是6位数字");
+      return;
+    }
+
     setFetchingName(true);
     try {
       // 调用独立的股票信息API
+      console.log("开始获取股票名称:", code);
       const response = await fetch(`/api/stock/info?code=${code}`);
       const result = await response.json();
       
       console.log("fetchStockName result", result);
       
       if (result.success && result.data) {
+        console.log("获取成功:", result.data.name);
         setFormData(prev => ({ ...prev, name: result.data.name }));
       } else {
         console.error("获取股票名称失败:", result);
         setFormData(prev => ({ ...prev, name: "" }));
-        alert("未找到该股票，请检查代码是否正确");
+        alert(`未找到股票代码 ${code}，请检查代码是否正确`);
       }
     } catch (error) {
       console.error("获取股票名称失败:", error);
@@ -313,7 +323,12 @@ function StrategyPanel({
                     }
                   }}
                   onChange={(e) => {
-                    const newCode = e.target.value;
+                    // 只允许输入数字，最多6位
+                    let newCode = e.target.value.replace(/\D/g, "");
+                    if (newCode.length > 6) {
+                      newCode = newCode.slice(0, 6);
+                    }
+                    
                     const shouldClearName = newCode.length < 6 && formData.name !== "";
                     
                     if (shouldClearName) {
@@ -323,12 +338,13 @@ function StrategyPanel({
                     }
                     
                     // 只有当输入长度为6时才获取股票名称
-                    if (newCode.length === 6) {
+                    if (newCode.length === 6 && !fetchingName) {
                       fetchStockName(newCode);
                     }
                   }}
                   value={formData.code}
                   disabled={fetchingName}
+                  maxLength={6}
                 />
                 {fetchingName && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
@@ -388,7 +404,12 @@ function StrategyPanel({
                         placeholder="例如：600519"
                         value={formData.code}
                         onChange={(e) => {
-                          const newCode = e.target.value;
+                          // 只允许输入数字，最多6位
+                          let newCode = e.target.value.replace(/\D/g, "");
+                          if (newCode.length > 6) {
+                            newCode = newCode.slice(0, 6);
+                          }
+                          
                           const shouldClearName = newCode.length < 6 && formData.name !== "";
                           
                           if (shouldClearName) {
@@ -398,11 +419,12 @@ function StrategyPanel({
                           }
                           
                           // 只有当输入长度为6时才获取股票名称
-                          if (newCode.length === 6) {
+                          if (newCode.length === 6 && !fetchingName) {
                             fetchStockName(newCode);
                           }
                         }}
                         required
+                        maxLength={6}
                       />
                     </div>
                     <div>
