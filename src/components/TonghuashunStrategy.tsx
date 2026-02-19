@@ -241,13 +241,13 @@ function StrategyPanel({
       if (result.success) {
         setChenAnalysisResult(result.data);
         setShowChenAnalysis(true);
-        alert("陈小群策略分析完成！请查看分析结果");
+        alert("游资策略分析完成！请查看分析结果");
       } else {
         alert(result.error);
       }
     } catch (error) {
-      console.error("陈小群策略分析失败:", error);
-      alert("陈小群策略分析失败");
+      console.error("游资策略分析失败:", error);
+      alert("游资策略分析失败");
     } finally {
       setChenAnalyzing(false);
     }
@@ -295,7 +295,7 @@ function StrategyPanel({
               className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
             >
               <TrendingUp className={`w-4 h-4 mr-2 ${chenAnalyzing ? "animate-spin" : ""}`} />
-              陈小群分析
+              游资分析
             </Button>
             {expanded ? (
               <ChevronUp className="w-5 h-5" onClick={(e) => { e.stopPropagation(); setExpanded(false); }} />
@@ -417,13 +417,13 @@ function StrategyPanel({
                   </Card>
                 )}
 
-                {/* 陈小群策略分析结果 */}
+                {/* 游资策略分析结果 */}
                 {showChenAnalysis && chenAnalysisResult && (
                   <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-200 dark:border-purple-800">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-purple-900 dark:text-purple-100">
-                          🎯 陈小群策略分析
+                          🎯 游资策略分析
                         </CardTitle>
                         <Button
                           variant="ghost"
@@ -434,7 +434,7 @@ function StrategyPanel({
                         </Button>
                       </div>
                       <CardDescription className="text-purple-700 dark:text-purple-300">
-                        基于游资大佬陈小群的选股逻辑分析
+                        基于游资选股策略分析
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -458,10 +458,10 @@ function StrategyPanel({
                         </div>
                       </div>
 
-                      {/* 陈小群策略建议 */}
+                      {/* 游资策略建议 */}
                       {chenAnalysisResult.recommendations && chenAnalysisResult.recommendations.length > 0 && (
                         <div>
-                          <h4 className="font-semibold mb-2 text-purple-900 dark:text-purple-100">陈小群策略建议</h4>
+                          <h4 className="font-semibold mb-2 text-purple-900 dark:text-purple-100">游资策略建议</h4>
                           <ul className="space-y-2 text-sm">
                             {chenAnalysisResult.recommendations.map((rec: string, index: number) => (
                               <li key={index} className="flex items-start gap-2 bg-white dark:bg-slate-800 p-2 rounded">
