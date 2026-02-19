@@ -68,15 +68,31 @@ export default function StockList() {
     }
   };
 
-  // 马赛克函数：屏蔽股票代码和名称
+  // 马赛克函数：完全屏蔽股票信息
   const maskStockInfo = (code: string, name: string) => {
     if (membershipStatus?.canViewStrategy) {
       return { code, name };
     }
-    // 随机保留部分字符，其他用*代替
-    const maskedCode = code.slice(0, 3) + '***';
-    const maskedName = name.slice(0, 1) + '***';
+    // 完全屏蔽
+    const maskedCode = '******';
+    const maskedName = '******';
     return { code: maskedCode, name: maskedName };
+  };
+
+  // 马赛克函数：屏蔽数值字段
+  const maskValue = (value: number, unit: string = '') => {
+    if (membershipStatus?.canViewStrategy) {
+      return value.toFixed(2) + unit;
+    }
+    return '******';
+  };
+
+  // 马赛克函数：屏蔽格式化数字
+  const maskFormattedNumber = (num: number) => {
+    if (membershipStatus?.canViewStrategy) {
+      return formatNumber(num);
+    }
+    return '******';
   };
 
   // 生成模拟股票数据
@@ -459,9 +475,9 @@ export default function StockList() {
                           )}
                         </div>
                       </TableCell>
-                    <TableCell className="text-right font-mono font-semibold">
-                      {stock.price.toFixed(2)}
-                    </TableCell>
+                      <TableCell className="text-right font-mono font-semibold">
+                        {maskValue(stock.price)}
+                      </TableCell>
                     <TableCell className="text-right font-mono">
                       <span
                         className={`flex items-center justify-end gap-1 ${
@@ -493,10 +509,10 @@ export default function StockList() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
-                      {stock.amount ? `${stock.amount.toFixed(2)}亿` : formatNumber(stock.volume)}
+                      {isMasked ? '******' : (stock.amount ? `${stock.amount.toFixed(2)}亿` : formatNumber(stock.volume))}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
-                      {formatNumber(stock.marketCap)}
+                      {maskFormattedNumber(stock.marketCap)}
                     </TableCell>
                     {showScore && selectedStrategy === "leader" && (
                       <TableCell className="text-right">
