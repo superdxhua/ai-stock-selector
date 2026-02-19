@@ -197,6 +197,9 @@ T+3价格：${tracking.t3_price}
  */
 export async function GET(request: NextRequest) {
   try {
+    // 在函数内部初始化 Supabase 客户端
+    const supabase = getSupabaseClient();
+
     const { searchParams } = new URL(request.url);
     const trackingId = searchParams.get('tracking_id');
 
