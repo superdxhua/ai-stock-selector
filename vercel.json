@@ -9,13 +9,6 @@
   "env": {
     "NEXT_TELEMETRY_DISABLED": "1"
   },
-  "build": {
-    "env": {
-      "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
-      "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key",
-      "DOUBAO_API_KEY": "@doubao-api-key"
-    }
-  },
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 60
